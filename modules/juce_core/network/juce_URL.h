@@ -528,6 +528,8 @@ public:
     */
     static URL createWithoutParsing (const String& url);
 
+    void createHeadersAndPostData (String&, MemoryBlock&) const;
+
 private:
     //==============================================================================
     friend class WebInputStream;
@@ -571,7 +573,6 @@ private:
     URL (const String&, int);
     void init();
     void addParameter (const String&, const String&);
-    void createHeadersAndPostData (String&, MemoryBlock&) const;
     URL withUpload (Upload*) const;
 
     JUCE_LEAK_DETECTOR (URL)

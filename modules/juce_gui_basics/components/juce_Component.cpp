@@ -786,16 +786,18 @@ struct StandardCachedComponentImage  : public CachedComponentImage
 
     void paint (Graphics& g) override
     {
-        scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+        scale = g.getInternalContext ().getPhysicalPixelScaleFactor ();
         auto compBounds = owner.getLocalBounds();
-        auto imageBounds = compBounds * scale;
+        auto compBoundsF = compBounds.toFloat ();
+        auto imageBoundsF = compBoundsF * scale;
+        auto imageBoundsI = imageBoundsF.toNearestIntEdges ();
 
-        if (image.isNull() || image.getBounds() != imageBounds)
+        if (image.isNull() || image.getBounds() != imageBoundsI)
         {
             image = Image (owner.isOpaque() ? Image::RGB
                                             : Image::ARGB,
-                           jmax (1, imageBounds.getWidth()),
-                           jmax (1, imageBounds.getHeight()),
+                           jmax (1, imageBoundsI.getWidth()),
+                           jmax (1, imageBoundsI.getHeight()),
                            ! owner.isOpaque());
 
             validArea.clear();
@@ -823,9 +825,14 @@ struct StandardCachedComponentImage  : public CachedComponentImage
 
         validArea = compBounds;
 
+		// we prepare a bitmap that should be used "as is". due to scaling and int/float conversions the bitmap might end
+		// up being drawn a bit bigger or a bit smaller than the exact bitmap size. if linear blending is used the bitmap
+		// will wash out on screen, so we force nearest neighbor which is just fine for this case.
+		g.setImageResamplingQuality ( Graphics::lowResamplingQuality );
+
         g.setColour (Colours::black.withAlpha (owner.getAlpha()));
-        g.drawImageTransformed (image, AffineTransform::scale ((float) compBounds.getWidth()  / (float) imageBounds.getWidth(),
-                                                               (float) compBounds.getHeight() / (float) imageBounds.getHeight()), false);
+        g.drawImageTransformed (image, AffineTransform::scale (compBoundsF.getWidth()  / imageBoundsF.getWidth(),
+                                                               compBoundsF.getHeight() / imageBoundsF.getHeight()), false);
     }
 
     bool invalidateAll() override                            { validArea.clear(); return true; }
@@ -1917,13 +1924,21 @@ void Component::paintComponentAndChildren (Graphics& g)
     if (flags.dontClipGraphicsFlag)
     {
         paint (g);
+
+        if (onPaint != nullptr)
+            onPaint (g);
     }
     else
     {
         Graphics::ScopedSaveState ss (g);
 
         if (! (ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
+        {
             paint (g);
+
+            if (onPaint != nullptr)
+                onPaint (g);
+        }
     }
 
     for (int i = 0; i < childComponentList.size(); ++i)
@@ -1973,6 +1988,9 @@ void Component::paintComponentAndChildren (Graphics& g)
 
     Graphics::ScopedSaveState ss (g);
     paintOverChildren (g);
+
+    if (onPaintOverChildren != nullptr)
+        onPaintOverChildren (g);
 }
 
 void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel)
@@ -2135,9 +2153,16 @@ Colour Component::findColour (int colourID, bool inheritFromParent) const
     return getLookAndFeel().findColour (colourID);
 }
 
-bool Component::isColourSpecified (int colourID) const
+bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
 {
-    return properties.contains (ComponentHelpers::getColourPropertyID (colourID));
+    if (properties.contains (ComponentHelpers::getColourPropertyID (colourID)))
+        return true;
+
+    if (inheritFromParent && parentComponent != nullptr
+        && (lookAndFeel == nullptr || ! lookAndFeel->isColourSpecified (colourID)))
+        return parentComponent->isColourSpecified (colourID, true);
+
+    return getLookAndFeel().isColourSpecified (colourID);
 }
 
 void Component::removeColour (int colourID)

@@ -26,7 +26,7 @@
 namespace juce
 {
 
-JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4365)
+JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4365 4242)
 
 namespace jpeglibNamespace
 {

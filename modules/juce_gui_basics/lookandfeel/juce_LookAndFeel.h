@@ -158,6 +158,11 @@ public:
     */
     void setColour (int colourId, Colour colour) noexcept;
 
+    /** If a colour has been set with setColour(), this will remove it.
+        This allows you to make a colour revert to its default state.
+    */
+    void removeColour (int colourID);
+
     /** Returns true if the specified colour ID has been explicitly set using the
         setColour() method.
     */
@@ -222,6 +227,25 @@ public:
     //==============================================================================
     /** Plays the system's default 'beep' noise, to alert the user about something very important. */
     virtual void playAlertSound();
+
+	enum class FontWeight : int
+	{
+		regular = 0,
+		bold,
+		light
+	};
+
+	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    virtual Font defaultFontWithHeight (float height)   { return defaultFontWithHeight (FontWeight::regular, height); }
+
+	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    virtual Font defaultFontWithHeight (FontWeight w, float height)   { return defaultFonts[w].withHeight (height); }
+
+
+protected:
+    //==============================================================================
+    /** Default font for drawing. This is a reFX addition, so JUCE Components won't use this */
+    std::map<FontWeight, Font> defaultFonts;
 
 private:
     //==============================================================================

@@ -1483,6 +1483,11 @@ public:
     */
     virtual void paint (Graphics& g);
 
+    /** Or, you can set onPaint for a component, and it will override the paint() function,
+        so youo can customize painting without hacving to subclass
+     */
+    std::function<void (Graphics&)> onPaint;
+
     /** Components can override this method to draw over the top of their children.
 
         For most drawing operations, it's better to use the normal paint() method,
@@ -1493,6 +1498,10 @@ public:
     */
     virtual void paintOverChildren (Graphics& g);
 
+    /** Or, you can set onPaintOverChildren for a component, and it will override the paint() function,
+        so youo can customize painting without hacving to subclass
+     */
+    std::function<void (Graphics&)> onPaintOverChildren;
 
     //==============================================================================
     /** Called when the mouse moves inside a component.
@@ -2121,7 +2130,7 @@ public:
     /** Returns true if the specified colour ID has been explicitly set for this
         component using the setColour() method.
     */
-    bool isColourSpecified (int colourID) const;
+    bool isColourSpecified (int colourID, bool inheritFromParent = false) const;
 
     /** This looks for any colours that have been specified for this component,
         and copies them to the specified target component.

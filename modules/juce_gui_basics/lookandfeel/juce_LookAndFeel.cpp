@@ -97,6 +97,15 @@ void LookAndFeel::setColour (int colourID, Colour newColour) noexcept
         colours.add (c);
 }
 
+void LookAndFeel::removeColour (int colourID)
+{
+    const ColourSetting c = { colourID, Colours::transparentBlack };
+    auto index = colours.indexOf (c);
+
+    if (index >= 0)
+        colours.remove (index);
+}
+
 bool LookAndFeel::isColourSpecified (const int colourID) const noexcept
 {
     const ColourSetting c = { colourID, Colour() };

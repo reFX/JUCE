@@ -1,0 +1,21 @@
+name: Merge Upstream
+on:
+  push:
+    branches:
+      - reFX/update_action
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  build:
+    name: Merge Upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      - name: "Run script"
+        run: |
+          cp ./.github/workflows/update /tmp
+          /tmp/update
+                    

@@ -286,7 +286,20 @@ struct MenuWindow  : public Component
         if (isOpaque())
             g.fillAll (Colours::white);
 
-        getLookAndFeel().drawPopupMenuBackground (g, getWidth(), getHeight());
+        auto& lf = getLookAndFeel();
+
+        lf.drawPopupMenuBackground (g, getWidth(), getHeight());
+
+        int x = 0;
+        int gap = lf.getColumnSeparatorWidth();
+        auto border = lf.getPopupMenuBorderSize();
+
+        for (int i = 0; i < numColumns - 1; i++)
+        {
+            x += columnWidths[i];
+            auto rc = Rectangle<int>(x - gap, border, gap, getHeight() - border * 2);
+            lf.drawPopupMenuColumnSeparator (g, rc);
+        }
     }
 
     void paintOverChildren (Graphics& g) override
@@ -709,64 +722,110 @@ struct MenuWindow  : public Component
 
     void layoutMenuItems (const int maxMenuW, const int maxMenuH, int& width, int& height)
     {
-        numColumns = options.getMinimumNumColumns();
-        contentHeight = 0;
+        int numColumnBreaks = 0;
+        for (auto& i : items)
+            if (i->item.isColumnBreak)
+                numColumnBreaks++;
 
-        auto maximumNumColumns = options.getMaximumNumColumns() > 0 ? options.getMaximumNumColumns() : 7;
-
-        for (;;)
+        if (numColumnBreaks > 0)
         {
-            auto totalW = workOutBestSize (maxMenuW);
+            numColumns = numColumnBreaks + 1;
+            contentHeight = 0;
 
-            if (totalW > maxMenuW)
+            workOutBestSize (maxMenuW, true);
+        }
+        else
+        {
+            numColumns = options.getMinimumNumColumns();
+            contentHeight = 0;
+
+            auto maximumNumColumns = options.getMaximumNumColumns() > 0 ? options.getMaximumNumColumns() : 7;
+
+            for (;;)
             {
-                numColumns = jmax (1, numColumns - 1);
-                workOutBestSize (maxMenuW); // to update col widths
-                break;
+                auto totalW = workOutBestSize (maxMenuW, false);
+
+                if (totalW > maxMenuW)
+                {
+                    numColumns = jmax (1, numColumns - 1);
+                    workOutBestSize (maxMenuW, false); // to update col widths
+                    break;
+                }
+
+                if (totalW > maxMenuW / 2
+                     || contentHeight < maxMenuH
+                     || numColumns >= maximumNumColumns)
+                    break;
+
+                ++numColumns;
             }
-
-            if (totalW > maxMenuW / 2
-                 || contentHeight < maxMenuH
-                 || numColumns >= maximumNumColumns)
-                break;
-
-            ++numColumns;
         }
 
         auto actualH = jmin (contentHeight, maxMenuH);
 
         needsToScroll = contentHeight > actualH;
 
-        width = updateYPositions();
+        width = updateYPositions() - getLookAndFeel().getColumnSeparatorWidth();
         height = actualH + getLookAndFeel().getPopupMenuBorderSize() * 2;
     }
 
-    int workOutBestSize (const int maxMenuW)
+    int workOutBestSize (const int maxMenuW, bool manualColumnBreaks)
     {
         int totalW = 0;
         contentHeight = 0;
-        int childNum = 0;
 
-        for (int col = 0; col < numColumns; ++col)
+        if (manualColumnBreaks)
         {
+            int colIdx = 0;
             int colW = options.getStandardItemHeight(), colH = 0;
 
-            auto numChildren = jmin (items.size() - childNum,
-                                     (items.size() + numColumns - 1) / numColumns);
-
-            for (int i = numChildren; --i >= 0;)
+            for (int i = 0; i < items.size(); i++)
             {
-                colW = jmax (colW, items.getUnchecked (childNum + i)->getWidth());
-                colH += items.getUnchecked (childNum + i)->getHeight();
+                auto item = items[i];
+
+                colW = jmax (colW, item->getWidth());
+                colH += item->getHeight();
+
+                colW = jmin (maxMenuW / jmax (1, numColumns - 2), colW + getLookAndFeel().getColumnSeparatorWidth());
+
+                if (item->item.isColumnBreak || i == items.size() - 1)
+                {
+                    columnWidths.set (colIdx, colW);
+                    totalW += colW;
+                    contentHeight = jmax (contentHeight, colH);
+
+                    colIdx++;
+
+                    colH = 0;
+                    colW = options.getStandardItemHeight();
+                }
             }
+        }
+        else
+        {
+            int childNum = 0;
 
-            colW = jmin (maxMenuW / jmax (1, numColumns - 2), colW + getLookAndFeel().getPopupMenuBorderSize() * 2);
+            for (int col = 0; col < numColumns; ++col)
+            {
+                int colW = options.getStandardItemHeight(), colH = 0;
 
-            columnWidths.set (col, colW);
-            totalW += colW;
-            contentHeight = jmax (contentHeight, colH);
+                auto numChildren = jmin (items.size() - childNum,
+                                         (items.size() + numColumns - 1) / numColumns);
 
-            childNum += numChildren;
+                for (int i = numChildren; --i >= 0;)
+                {
+                    colW = jmax (colW, items.getUnchecked (childNum + i)->getWidth());
+                    colH += items.getUnchecked (childNum + i)->getHeight();
+                }
+
+                colW = jmin (maxMenuW / jmax (1, numColumns - 2), colW + getLookAndFeel().getColumnSeparatorWidth());
+
+                columnWidths.set (col, colW);
+                totalW += colW;
+                contentHeight = jmax (contentHeight, colH);
+
+                childNum += numChildren;
+            }
         }
 
         // width must never be larger than the screen
@@ -873,26 +932,56 @@ struct MenuWindow  : public Component
 
     int updateYPositions()
     {
+        int numColumnBreaks = 0;
+        for (auto& i : items)
+            if (i->item.isColumnBreak)
+                numColumnBreaks++;
+
         int x = 0;
-        int childNum = 0;
-
-        for (int col = 0; col < numColumns; ++col)
+        if (numColumnBreaks > 0)
         {
-            auto numChildren = jmin (items.size() - childNum,
-                                     (items.size() + numColumns - 1) / numColumns);
-
-            auto colW = columnWidths[col];
+            int colIdx = 0;
             auto y = getLookAndFeel().getPopupMenuBorderSize() - (childYOffset + (getY() - windowPos.getY()));
 
-            for (int i = 0; i < numChildren; ++i)
+            for (int i = 0; i < items.size(); i++)
             {
-                auto* c = items.getUnchecked (childNum + i);
-                c->setBounds (x, y, colW, c->getHeight());
-                y += c->getHeight();
-            }
+                auto item = items[i];
 
-            x += colW;
-            childNum += numChildren;
+                auto colW = columnWidths[colIdx];
+
+                item->setBounds (x, y, colW - getLookAndFeel().getColumnSeparatorWidth(), item->getHeight());
+                y += item->getHeight();
+
+                if (item->item.isColumnBreak || i == items.size() - 1)
+                {
+                    colIdx++;
+                    y = getLookAndFeel().getPopupMenuBorderSize() - (childYOffset + (getY() - windowPos.getY()));
+                    x += colW;
+                }
+            }
+        }
+        else
+        {
+            int childNum = 0;
+
+            for (int col = 0; col < numColumns; ++col)
+            {
+                auto numChildren = jmin (items.size() - childNum,
+                                         (items.size() + numColumns - 1) / numColumns);
+
+                auto colW = columnWidths[col];
+                auto y = getLookAndFeel().getPopupMenuBorderSize() - (childYOffset + (getY() - windowPos.getY()));
+
+                for (int i = 0; i < numChildren; ++i)
+                {
+                    auto* c = items.getUnchecked (childNum + i);
+                    c->setBounds (x, y, colW - getLookAndFeel().getColumnSeparatorWidth(), c->getHeight());
+                    y += c->getHeight();
+                }
+
+                x += colW;
+                childNum += numChildren;
+            }
         }
 
         return x;
@@ -1013,7 +1102,7 @@ struct MenuWindow  : public Component
     Rectangle<int> windowPos;
     bool hasBeenOver = false, needsToScroll = false;
     bool dismissOnMouseUp, hideOnExit = false, disableMouseMoves = false, hasAnyJuceCompHadFocus = false;
-    int numColumns = 0, contentHeight = 0, childYOffset = 0;
+    int numColumns = 0, contentHeight = 0, childYOffset = 0, columnSpacing = 0;
     Component::SafePointer<ItemComponent> currentChild;
     std::unique_ptr<MenuWindow> activeSubMenu;
     Array<int> columnWidths;
@@ -1349,6 +1438,7 @@ PopupMenu::Item::Item (const Item& other)
     isEnabled (other.isEnabled),
     isTicked (other.isTicked),
     isSeparator (other.isSeparator),
+    isColumnBreak (other.isColumnBreak),
     isSectionHeader (other.isSectionHeader)
 {
 }
@@ -1619,6 +1709,12 @@ void PopupMenu::addSeparator()
         i.isSeparator = true;
         addItem (std::move (i));
     }
+}
+
+void PopupMenu::addColumnBreak()
+{
+    if (items.size() > 0 && ! items.getLast().isColumnBreak)
+        items.getReference (items.size() - 1).isColumnBreak = true;
 }
 
 void PopupMenu::addSectionHeader (String title)

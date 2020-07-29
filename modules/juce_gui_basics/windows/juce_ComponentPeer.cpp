@@ -23,6 +23,10 @@
   ==============================================================================
 */
 
+#if JUCE_ENABLE_REPAINT_DEBUGGING
+ bool repaintDebuggingActive = false;
+#endif
+
 namespace juce
 {
 

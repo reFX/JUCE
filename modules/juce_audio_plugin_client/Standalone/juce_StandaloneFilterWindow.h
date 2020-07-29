@@ -258,10 +258,10 @@ public:
             maxNumOutputs = jmax (0, (int) defaultConfig.numOuts);
         }
 
-        if (auto* bus = processor->getBus (true, 0))
+        if (auto bus = processor->getBus (true, 0))
             maxNumInputs = jmax (0, bus->getDefaultLayout().size());
 
-        if (auto* bus = processor->getBus (false, 0))
+        if (auto bus = processor->getBus (false, 0))
             maxNumOutputs = jmax (0, bus->getDefaultLayout().size());
 
         o.content.setOwned (new SettingsComponent (*this, deviceManager, maxNumInputs, maxNumOutputs));
@@ -326,7 +326,7 @@ public:
     //==============================================================================
     void savePluginState()
     {
-        if (settings != nullptr && processor != nullptr)
+        if (settings != nullptr && settings->getBoolValue ("autoLoadSave", true) && processor != nullptr)
         {
             MemoryBlock data;
             processor->getStateInformation (data);
@@ -337,7 +337,7 @@ public:
 
     void reloadPluginState()
     {
-        if (settings != nullptr)
+        if (settings != nullptr && settings->getBoolValue ("autoLoadSave", true))
         {
             MemoryBlock data;
 
@@ -598,7 +598,7 @@ public:
        #else
         setContentOwned (new MainContentComponent (*this), true);
 
-        if (auto* props = pluginHolder->settings.get())
+        if (auto props = pluginHolder->settings.get())
         {
             const int x = props->getIntValue ("windowX", -100);
             const int y = props->getIntValue ("windowY", -100);
@@ -618,7 +618,7 @@ public:
     ~StandaloneFilterWindow() override
     {
        #if (! JUCE_IOS) && (! JUCE_ANDROID)
-        if (auto* props = pluginHolder->settings.get())
+        if (auto props = pluginHolder->settings.get())
         {
             props->setValue ("windowX", getX());
             props->setValue ("windowY", getY());
@@ -641,7 +641,7 @@ public:
         clearContentComponent();
         pluginHolder->deletePlugin();
 
-        if (auto* props = pluginHolder->settings.get())
+        if (auto props = pluginHolder->settings.get())
             props->removeValue ("filterState");
 
         pluginHolder->createPlugin();
@@ -655,24 +655,6 @@ public:
         pluginHolder->savePluginState();
 
         JUCEApplicationBase::quit();
-    }
-
-    void handleMenuResult (int result)
-    {
-        switch (result)
-        {
-            case 1:  pluginHolder->showAudioSettingsDialog(); break;
-            case 2:  pluginHolder->askUserToSaveState(); break;
-            case 3:  pluginHolder->askUserToLoadState(); break;
-            case 4:  resetToDefaultState(); break;
-            default: break;
-        }
-    }
-
-    static void menuCallback (int result, StandaloneFilterWindow* button)
-    {
-        if (button != nullptr && result != 0)
-            button->handleMenuResult (result);
     }
 
     void resized() override
@@ -689,15 +671,21 @@ private:
     void buttonClicked (Button*) override
     {
         PopupMenu m;
-        m.addItem (1, TRANS("Audio/MIDI Settings..."));
+        m.addItem (TRANS("Audio/MIDI Settings..."), [this] { pluginHolder->showAudioSettingsDialog(); });
         m.addSeparator();
-        m.addItem (2, TRANS("Save current state..."));
-        m.addItem (3, TRANS("Load a saved state..."));
-        m.addSeparator();
-        m.addItem (4, TRANS("Reset to default state"));
+        m.addItem (TRANS("Save current state..."), [this] { pluginHolder->askUserToSaveState(); });
+        m.addItem (TRANS("Load a saved state..."), [this] { pluginHolder->askUserToLoadState(); });
 
-        m.showMenuAsync (PopupMenu::Options(),
-                         ModalCallbackFunction::forComponent (menuCallback, this));
+        if (auto settings = pluginHolder->settings.get())
+        {
+            bool autoLoadSave = settings->getBoolValue ("autoLoadSave", true);
+            m.addItem (TRANS("Automtically load and save state"), true, autoLoadSave, [settings, autoLoadSave] { settings->setValue ("autoLoadSave", ! autoLoadSave); });
+        }
+
+        m.addSeparator();
+        m.addItem (TRANS("Reset to default state"), [this] { resetToDefaultState(); });
+
+        m.showMenuAsync (PopupMenu::Options());
     }
 
     //==============================================================================

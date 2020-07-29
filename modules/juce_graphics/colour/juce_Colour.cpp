@@ -405,8 +405,14 @@ Colour Colour::withHue (float h) const noexcept          { ColourHelpers::HSB hs
 Colour Colour::withSaturation (float s) const noexcept   { ColourHelpers::HSB hsb (*this); hsb.saturation = s; return hsb.toColour (*this); }
 Colour Colour::withBrightness (float v) const noexcept   { ColourHelpers::HSB hsb (*this); hsb.brightness = v; return hsb.toColour (*this); }
 
+Colour Colour::withPerceivedBrightness (float brightness) const noexcept
+{
+    return withBrightness ( brightness + ( getBrightness () - getPerceivedBrightness () ) * 0.33f );
+}
+
 Colour Colour::withSaturationHSL (float s) const noexcept { ColourHelpers::HSL hsl (*this); hsl.saturation = s; return hsl.toColour (*this); }
 Colour Colour::withLightness (float l) const noexcept     { ColourHelpers::HSL hsl (*this); hsl.lightness = l;  return hsl.toColour (*this); }
+
 
 float Colour::getPerceivedBrightness() const noexcept
 {

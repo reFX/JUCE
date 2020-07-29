@@ -176,6 +176,9 @@ public:
         /** True if this menu item is a separator line. */
         bool isSeparator = false;
 
+        /** True if the next item should appear on the next column */
+        bool isColumnBreak = false;
+
         /** True if this menu item is a section header. */
         bool isSectionHeader = false;
 
@@ -403,6 +406,9 @@ public:
         always look ok.
     */
     void addSeparator();
+
+    /** Appends a column break to the menu, if you want columns of different lengths */
+    void addColumnBreak();
 
     /** Adds a non-clickable text item to the menu.
         This is a bold-font items which can be used as a header to separate the items
@@ -810,6 +816,10 @@ public:
         virtual bool shouldPopupMenuScaleWithTargetComponent (const PopupMenu::Options& options) = 0;
 
         virtual int getPopupMenuBorderSize() = 0;
+
+        virtual void drawPopupMenuColumnSeparator ( Graphics&, const juce::Rectangle<int>& ) {}
+
+        virtual int getColumnSeparatorWidth() { return 4; }
     };
 
 private:
