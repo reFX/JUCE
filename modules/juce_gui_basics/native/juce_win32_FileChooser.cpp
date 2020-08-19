@@ -210,7 +210,18 @@ private:
         if (FAILED (dialog.SetFileName (filename.toWideCharPointer())))
             return false;
 
-        const auto extension = filename.fromLastOccurrenceOf (".", false, false);
+        auto extension = filename.fromLastOccurrenceOf (".", false, false);
+        
+        if (isSave)
+        {
+            StringArray tokens;
+            tokens.addTokens (filtersString, ";,", "\"'");
+            tokens.trim();
+            tokens.removeEmptyStrings();
+
+            if (tokens.size() == 1 && tokens[0].removeCharacters ("*.").isNotEmpty())
+                extension = tokens[0].fromFirstOccurrenceOf (".", false, false);
+        }
 
         if (extension.isNotEmpty() && FAILED (dialog.SetDefaultExtension (extension.toWideCharPointer())))
             return false;
