@@ -212,7 +212,7 @@ private:
 
         auto extension = filename.fromLastOccurrenceOf (".", false, false);
         
-        if (isSave)
+        if (isSave && extension.isEmpty())
         {
             StringArray tokens;
             tokens.addTokens (filtersString, ";,", "\"'");
