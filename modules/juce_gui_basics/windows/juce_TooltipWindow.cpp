@@ -93,10 +93,16 @@ void TooltipWindow::displayTip (Point<int> screenPos, const String& tip)
         {
             updatePosition (tip, screenPos, Desktop::getInstance().getDisplays().findDisplayForPoint (screenPos).userArea);
 
-            addToDesktop (ComponentPeer::windowHasDropShadow
-                            | ComponentPeer::windowIsTemporary
-                            | ComponentPeer::windowIgnoresKeyPresses
-                            | ComponentPeer::windowIgnoresMouseClicks);
+			auto    peerFlags = ComponentPeer::windowIsTemporary
+				                | ComponentPeer::windowIgnoresKeyPresses
+				                | ComponentPeer::windowIgnoresMouseClicks;
+
+            if ( isOpaque () )
+            {
+                peerFlags |= ComponentPeer::windowHasDropShadow;
+            }
+
+            addToDesktop ( peerFlags );
         }
 
        #if JUCE_DEBUG
