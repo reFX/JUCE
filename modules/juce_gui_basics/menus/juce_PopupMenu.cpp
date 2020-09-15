@@ -1739,6 +1739,9 @@ PopupMenu::Options PopupMenu::Options::withTargetComponent (Component* comp) con
     if (comp != nullptr)
         o.targetArea = comp->getScreenBounds();
 
+    if (o.componentToWatchForDeletion == nullptr)
+        return o.withDeletionCheck (*comp);
+
     return o;
 }
 
@@ -1916,7 +1919,15 @@ void PopupMenu::showMenuAsync (const Options& options, ModalComponentManager::Ca
 
 void PopupMenu::showMenuAsync (const Options& options, std::function<void (int)> userCallback)
 {
-    showWithOptionalCallback (options, ModalCallbackFunction::create (userCallback), false);
+    auto safeCallback = [ options, userCallback ] (int id)
+    {
+        if (options.hasWatchedComponentBeenDeleted())
+            return;
+
+        userCallback (id);
+    };
+
+    showWithOptionalCallback (options, ModalCallbackFunction::create (safeCallback), false);
 }
 
 //==============================================================================
