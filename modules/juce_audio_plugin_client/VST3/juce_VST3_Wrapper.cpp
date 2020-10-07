@@ -2637,7 +2637,10 @@ public:
             processParameterChanges (*data.inputParameterChanges);
 
        #if JucePlugin_WantsMidiInput
-        if (isMidiInputBusEnabled && data.inputEvents != nullptr)
+        // Hack for Acid Pro: Fall back to the old juce behavior of processing
+        // midi even if the bus is disabled
+        // See this change: https://github.com/juce-framework/JUCE/commit/a2d1fc412a288287c3a841046e0501bfc30f7bf7#diff-ad2013b8a3cd1724655c452069a56582L2621
+        if (/*isMidiInputBusEnabled &&*/ data.inputEvents != nullptr)
             MidiEventList::toMidiBuffer (midiBuffer, *data.inputEvents);
        #endif
 
@@ -2656,7 +2659,9 @@ public:
         else jassertfalse;
 
        #if JucePlugin_ProducesMidiOutput
-        if (isMidiOutputBusEnabled && data.outputEvents != nullptr)
+        // Hack for Acid Pro: Fall back to the old juce behavior of processing
+        // midi even if the bus is disabled
+        if (/*isMidiOutputBusEnabled &&*/ data.outputEvents != nullptr)
             MidiEventList::pluginToHostEventList (*data.outputEvents, midiBuffer);
        #endif
 
