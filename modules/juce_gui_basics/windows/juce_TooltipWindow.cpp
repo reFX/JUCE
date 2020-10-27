@@ -91,7 +91,7 @@ void TooltipWindow::displayTip (Point<int> screenPos, const String& tip)
         }
         else
         {
-            updatePosition (tip, screenPos, Desktop::getInstance().getDisplays().findDisplayForPoint (screenPos).userArea);
+            updatePosition (tip, screenPos, Desktop::getInstance().getDisplays().getDisplayForPoint (screenPos)->userArea);
 
 			auto    peerFlags = ComponentPeer::windowIsTemporary
 				                | ComponentPeer::windowIgnoresKeyPresses
