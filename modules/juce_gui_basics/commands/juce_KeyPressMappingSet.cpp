@@ -347,9 +347,10 @@ bool KeyPressMappingSet::keyPressed (const KeyPress& key, Component* const origi
     return false;
 }
 
-bool KeyPressMappingSet::keyStateChanged (const bool /*isKeyDown*/, Component* originatingComponent)
+bool KeyPressMappingSet::keyStateChanged (const bool isKeyDown, Component* originatingComponent)
 {
     bool used = false;
+    bool commandWasDisabled = false;
     const uint32 now = Time::getMillisecondCounter();
 
     for (int i = mappings.size(); --i >= 0;)
@@ -358,6 +359,15 @@ bool KeyPressMappingSet::keyStateChanged (const bool /*isKeyDown*/, Component* o
 
         if (cm.wantsKeyUpDownCallbacks)
         {
+            ApplicationCommandInfo info (0);
+
+            if (commandManager.getTargetForCommand (cm.commandID, info) == nullptr) continue;
+            if ((info.flags & ApplicationCommandInfo::isDisabled) != 0)
+            {
+                commandWasDisabled = true;
+                continue;
+            }
+
             for (int j = cm.keypresses.size(); --j >= 0;)
             {
                 const KeyPress key (cm.keypresses.getReference (j));
@@ -405,6 +415,9 @@ bool KeyPressMappingSet::keyStateChanged (const bool /*isKeyDown*/, Component* o
             }
         }
     }
+
+    if (isKeyDown && originatingComponent != nullptr && commandWasDisabled)
+        originatingComponent->getLookAndFeel().playAlertSound();
 
     return used;
 }
