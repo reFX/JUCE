@@ -998,6 +998,9 @@ public:
         if (style == IncDecButtons)
             return;
 
+        if (! owner.isEnabled())
+            return;
+
         if (popupDisplay == nullptr)
         {
             popupDisplay.reset (new PopupDisplayComponent (owner, parentForPopupDisplay == nullptr));
