@@ -1417,8 +1417,7 @@ public:
         if (auto parentH = GetParent (hwnd))
         {
             auto r = getWindowRect (parentH);
-            auto localBounds = Rectangle<int>::leftTopRightBottom (bounds.left, bounds.top,
-                                                                   bounds.right, bounds.bottom).translated (-r.left, -r.top);
+            auto localBounds = rectangleFromRECT (bounds).translated (-r.left, -r.top);
 
            #if JUCE_WIN_PER_MONITOR_DPI_AWARE
             if (isPerMonitorDPIAwareWindow (hwnd))
@@ -4511,15 +4510,20 @@ static const Displays::Display* getCurrentDisplayFromScaleFactor (HWND hwnd)
 //==============================================================================
 struct MonitorInfo
 {
-    MonitorInfo (bool main, RECT rect, double d) noexcept
-        : isMain (main), bounds (rect), dpi (d) {}
+    MonitorInfo (bool main, RECT totalArea, RECT workArea, double d) noexcept
+        : isMain (main),
+          totalAreaRect (totalArea),
+          workAreaRect (workArea),
+          dpi (d)
+    {
+    }
 
     bool isMain;
-    RECT bounds;
+    RECT totalAreaRect, workAreaRect;
     double dpi;
 };
 
-static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userInfo)
+static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT, LPARAM userInfo)
 {
     MONITORINFO info = {};
     info.cbSize = sizeof (info);
@@ -4536,7 +4540,7 @@ static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userIn
             dpi = (dpiX + dpiY) / 2.0;
     }
 
-    ((Array<MonitorInfo>*) userInfo)->add ({ isMain, *r, dpi });
+    ((Array<MonitorInfo>*) userInfo)->add ({ isMain, info.rcMonitor, info.rcWork, dpi });
     return TRUE;
 }
 
@@ -4550,7 +4554,10 @@ void Displays::findDisplays (float masterScale)
     auto globalDPI = getGlobalDPI();
 
     if (monitors.size() == 0)
-        monitors.add ({ true, getWindowRect (GetDesktopWindow()), globalDPI });
+    {
+        auto windowRect = getWindowRect (GetDesktopWindow());
+        monitors.add ({ true, windowRect, windowRect, globalDPI });
+    }
 
     // make sure the first in the list is the main monitor
     for (int i = 1; i < monitors.size(); ++i)
@@ -4574,30 +4581,24 @@ void Displays::findDisplays (float masterScale)
             d.scale = (d.dpi / USER_DEFAULT_SCREEN_DPI) * (masterScale / Desktop::getDefaultMasterScale());
         }
 
-        d.userArea = d.totalArea = Rectangle<int>::leftTopRightBottom (monitor.bounds.left, monitor.bounds.top,
-                                                                       monitor.bounds.right, monitor.bounds.bottom);
-
-        if (d.isMain)
-        {
-            RECT workArea;
-            SystemParametersInfo (SPI_GETWORKAREA, 0, &workArea, 0);
-
-            d.userArea = d.userArea.getIntersection (Rectangle<int>::leftTopRightBottom (workArea.left, workArea.top,
-                                                                                         workArea.right, workArea.bottom));
-        }
+        d.totalArea = rectangleFromRECT (monitor.totalAreaRect);
+        d.userArea  = rectangleFromRECT (monitor.workAreaRect);
 
         displays.add (d);
     }
 
    #if JUCE_WIN_PER_MONITOR_DPI_AWARE
-    updateToLogical();
-   #else
-    for (auto& d : displays)
-    {
-        d.totalArea /= masterScale;
-        d.userArea  /= masterScale;
-    }
+    if (isPerMonitorDPIAwareThread())
+        updateToLogical();
+    else
    #endif
+    {
+        for (auto& d : displays)
+        {
+            d.totalArea /= masterScale;
+            d.userArea  /= masterScale;
+        }
+    }
 }
 
 //==============================================================================

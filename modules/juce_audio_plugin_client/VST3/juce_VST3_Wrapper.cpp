@@ -594,19 +594,13 @@ public:
 
         bool setNormalized (Vst::ParamValue v) override
         {
-            Vst::ParamValue program = v * info.stepCount;
-
-            if (! isPositiveAndBelow ((int) program, owner.getNumPrograms()))
+            if (! isPositiveAndBelow ((int) toPlain (v), owner.getNumPrograms())
+                || v == valueNormalized)
                 return false;
 
-            if (valueNormalized != v)
-            {
-                valueNormalized = v;
-                changed();
-                return true;
-            }
-
-            return false;
+            valueNormalized = v;
+            changed();
+            return true;
         }
 
         void toString (Vst::ParamValue value, Vst::String128 result) const override
@@ -945,28 +939,29 @@ public:
 
         if (auto* pluginInstance = getPluginInstance())
         {
-            auto newNumPrograms = pluginInstance->getNumPrograms();
+            auto numPrograms = pluginInstance->getNumPrograms();
 
-            if (newNumPrograms != lastNumPrograms)
+            if (numPrograms > 1)
             {
-                if (newNumPrograms > 1)
-                {
-                    auto paramValue = static_cast<Vst::ParamValue> (pluginInstance->getCurrentProgram())
-                                      / static_cast<Vst::ParamValue> (pluginInstance->getNumPrograms() - 1);
+                auto paramValue = static_cast<Vst::ParamValue> (pluginInstance->getCurrentProgram())
+                                  / static_cast<Vst::ParamValue> (numPrograms - 1);
 
-                    EditController::setParamNormalized (JuceAudioProcessor::paramPreset, paramValue);
+                if (paramValue != EditController::getParamNormalized (JuceAudioProcessor::paramPreset))
+                {
+                    beginEdit (JuceAudioProcessor::paramPreset);
+                    paramChanged (JuceAudioProcessor::paramPreset, (float) paramValue);
+                    endEdit (JuceAudioProcessor::paramPreset);
+
                     flags |= Vst::kParamValuesChanged;
                 }
-
-                lastNumPrograms = newNumPrograms;
             }
 
-            auto newLatencySamples = pluginInstance->getLatencySamples();
+            auto latencySamples = pluginInstance->getLatencySamples();
 
-            if (newLatencySamples != lastLatencySamples)
+            if (latencySamples != lastLatencySamples)
             {
                 flags |= Vst::kLatencyChanged;
-                lastLatencySamples = newLatencySamples;
+                lastLatencySamples = latencySamples;
             }
         }
 
@@ -1017,7 +1012,7 @@ private:
     std::atomic<bool> vst3IsPlaying     { false },
                       inSetupProcessing { false };
 
-    int lastNumPrograms = 0, lastLatencySamples = 0;
+    int lastLatencySamples = 0;
 
    #if ! JUCE_MAC
     float lastScaleFactorReceived = 1.0f;
