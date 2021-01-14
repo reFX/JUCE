@@ -747,6 +747,8 @@ public:
                     const int numBytes = (int) CFDataGetLength (data);
                     const juce::uint8* const rawBytes = CFDataGetBytePtr (data);
 
+                    CFRetain (data);
+
                     if (numBytes > 0)
                     {
                        #if JUCE_AU_WRAPPERS_SAVE_PROGRAM_STATES
@@ -755,6 +757,8 @@ public:
                         juceFilter->setStateInformation (rawBytes, numBytes);
                        #endif
                     }
+
+                    CFRelease (data);
                 }
             }
         }
