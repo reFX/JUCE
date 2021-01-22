@@ -549,16 +549,9 @@ void Component::setVisible (bool shouldBeVisible)
             if (currentlyFocusedComponent == this || isParentOf (currentlyFocusedComponent))
             {
                 if (parentComponent != nullptr)
-				{
                     parentComponent->grabKeyboardFocus();
-
-					if (currentlyFocusedComponent == this || isParentOf (currentlyFocusedComponent))
-						giveAwayFocus (true);
-				}
                 else
-				{
                     giveAwayFocus (true);
-				}
             }
         }
 
