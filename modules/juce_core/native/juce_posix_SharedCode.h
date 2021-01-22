@@ -1161,7 +1161,7 @@ public:
         if (childPID == 0)
             return false;
 
-        int childState;
+        int childState = 0;
         auto pid = waitpid (childPID, &childState, WNOHANG);
 
         if (pid == 0)
