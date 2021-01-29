@@ -3350,7 +3350,7 @@ private:
     std::vector<std::unique_ptr<ClassEntry>> classes;
 
     //==============================================================================
-    template<class PClassInfoType>
+    template <class PClassInfoType>
     tresult PLUGIN_API getPClassInfo (Steinberg::int32 index, PClassInfoType* info)
     {
         if (info != nullptr)

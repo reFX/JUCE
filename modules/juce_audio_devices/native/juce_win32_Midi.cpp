@@ -334,7 +334,7 @@ private:
     };
 
     //==============================================================================
-    template<class WrapperType>
+    template <class WrapperType>
     struct Win32MidiDeviceQuery
     {
         static Array<MidiDeviceInfo> getAvailableDevices()
@@ -782,9 +782,9 @@ private:
     public:
         virtual ~DeviceCallbackHandler() {};
 
-        virtual HRESULT addDevice (IDeviceInformation*) = 0;
-        virtual HRESULT removeDevice (IDeviceInformationUpdate*) = 0;
-        virtual HRESULT updateDevice (IDeviceInformationUpdate*) = 0;
+        JUCE_COMCALL addDevice (IDeviceInformation*) = 0;
+        JUCE_COMCALL removeDevice (IDeviceInformationUpdate*) = 0;
+        JUCE_COMCALL updateDevice (IDeviceInformationUpdate*) = 0;
 
         bool attach (HSTRING deviceSelector, DeviceInformationKind infoKind)
         {
@@ -891,7 +891,7 @@ private:
             watcher = nullptr;
         }
 
-        template<typename InfoType>
+        template <typename InfoType>
         IInspectable* getValueFromDeviceInfo (String key, InfoType* info)
         {
             __FIMapView_2_HSTRING_IInspectable* properties;
