@@ -1757,10 +1757,7 @@ PopupMenu::Options PopupMenu::Options::withTargetComponent (Component* comp) con
     o.targetComponent = comp;
 
     if (comp != nullptr)
-    {
         o.targetArea = comp->getScreenBounds();
-		o.componentToWatchForDeletion = comp;
-    }
 
     return o;
 }
