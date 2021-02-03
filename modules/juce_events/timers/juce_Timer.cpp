@@ -91,6 +91,16 @@ public:
 
     void callTimers()
     {
+   		// do not call any timers after the quit message has been send
+        const MessageManager* mm = MessageManager::getInstanceWithoutCreating ();
+        if ( mm != nullptr )
+        {
+            if ( mm->hasStopMessageBeenSent () == true )
+            {
+                return;
+            }
+        }
+
         auto timeout = Time::getMillisecondCounter() + 100;
 
         const LockType::ScopedLockType sl (lock);
