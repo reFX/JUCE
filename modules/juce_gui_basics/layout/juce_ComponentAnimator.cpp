@@ -65,9 +65,10 @@ public:
         proxy.deleteAndZero();
 
         if (useProxyComponent)
+        {
             proxy = new ProxyComponent (*component);
-
-        component->setVisible (! useProxyComponent);
+            component->setVisible (false);
+        }
     }
 
     bool useTimeslice (const int elapsed)
