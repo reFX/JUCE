@@ -611,7 +611,7 @@ public:
     */
     static URL createWithoutParsing (const String& url);
 
-    void createHeadersAndPostData (String&, MemoryBlock&) const;
+    void createHeadersAndPostData (String&, MemoryBlock&, bool) const;
 
     //==============================================================================
     using OpenStreamProgressCallback = bool (void* context, int bytesSent, int totalBytes);
