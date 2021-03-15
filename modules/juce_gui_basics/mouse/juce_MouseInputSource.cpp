@@ -433,7 +433,7 @@ public:
     }
 
     //==============================================================================
-    void enableUnboundedMouseMovement (bool enable, bool keepCursorVisibleUntilOffscreen)
+    void enableUnboundedMouseMovement (bool enable, bool keepCursorVisibleUntilOffscreen, bool fixed = false)
     {
         enable = enable && isDragging();
         isCursorVisibleUntilOffscreen = keepCursorVisibleUntilOffscreen;
@@ -450,6 +450,8 @@ public:
 
             isUnboundedMouseModeOn = enable;
             unboundedMouseOffset = {};
+			unboundedMousePositionFixed = fixed;
+			mouseDownPos = getRawScreenPosition();
 
             revealCursor (true);
         }
@@ -459,7 +461,12 @@ public:
     {
         auto componentScreenBounds = ScalingHelpers::scaledScreenPosToUnscaled (current.getParentMonitorArea().reduced (2, 2).toFloat());
 
-        if (! componentScreenBounds.contains (lastScreenPos))
+		if (unboundedMousePositionFixed)
+		{
+			unboundedMouseOffset += (lastScreenPos - ScalingHelpers::unscaledScreenPosToScaled (mouseDownPos));
+			setScreenPosition (ScalingHelpers::unscaledScreenPosToScaled (mouseDownPos));
+		}
+        else if (! componentScreenBounds.contains (lastScreenPos))
         {
             auto componentCentre = current.getScreenBounds().toFloat().getCentre();
             unboundedMouseOffset += (lastScreenPos - ScalingHelpers::scaledScreenPosToUnscaled (componentCentre));
@@ -477,7 +484,7 @@ public:
     //==============================================================================
     void showMouseCursor (MouseCursor cursor, bool forcedUpdate)
     {
-        if (isUnboundedMouseModeOn && ((! unboundedMouseOffset.isOrigin()) || ! isCursorVisibleUntilOffscreen))
+        if (isUnboundedMouseModeOn && ! unboundedMousePositionFixed && ((! unboundedMouseOffset.isOrigin()) || ! isCursorVisibleUntilOffscreen))
         {
             cursor = MouseCursor::NoCursor;
             forcedUpdate = true;
@@ -508,7 +515,7 @@ public:
     //==============================================================================
     const int index;
     const MouseInputSource::InputSourceType inputType;
-    Point<float> lastScreenPos, unboundedMouseOffset; // NB: these are unscaled coords
+    Point<float> lastScreenPos, unboundedMouseOffset, mouseDownPos; // NB: these are unscaled coords
     ModifierKeys buttonState;
     float pressure = 0;
     float orientation = 0;
@@ -516,7 +523,7 @@ public:
     float tiltX = 0;
     float tiltY = 0;
 
-    bool isUnboundedMouseModeOn = false, isCursorVisibleUntilOffscreen = false;
+	bool isUnboundedMouseModeOn = false, isCursorVisibleUntilOffscreen = false, unboundedMousePositionFixed = true;
 
 private:
     WeakReference<Component> componentUnderMouse, lastNonInertialWheelTarget;
@@ -617,8 +624,8 @@ Point<float> MouseInputSource::getLastMouseDownPosition() const noexcept        
 bool MouseInputSource::isLongPressOrDrag() const noexcept                       { return pimpl->isLongPressOrDrag(); }
 bool MouseInputSource::hasMovedSignificantlySincePressed() const noexcept       { return pimpl->hasMovedSignificantlySincePressed(); }
 bool MouseInputSource::canDoUnboundedMovement() const noexcept                  { return ! isTouch(); }
-void MouseInputSource::enableUnboundedMouseMovement (bool isEnabled, bool keepCursorVisibleUntilOffscreen) const
-                                                                         { pimpl->enableUnboundedMouseMovement (isEnabled, keepCursorVisibleUntilOffscreen); }
+void MouseInputSource::enableUnboundedMouseMovement (bool isEnabled, bool keepCursorVisibleUntilOffscreen, bool unboundedMousePositionFixed) const
+                                                                         { pimpl->enableUnboundedMouseMovement (isEnabled, keepCursorVisibleUntilOffscreen, unboundedMousePositionFixed); }
 bool MouseInputSource::isUnboundedMouseMovementEnabled() const           { return pimpl->isUnboundedMouseModeOn; }
 bool MouseInputSource::hasMouseCursor() const noexcept                   { return ! isTouch(); }
 void MouseInputSource::showMouseCursor (const MouseCursor& cursor)       { pimpl->showMouseCursor (cursor, false); }
