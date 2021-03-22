@@ -29,6 +29,6 @@ git merge develop
 git push
 
 echo ** Update accessability
-git checkout accessibility
+git checkout --track origin/accessibility
 git merge upstream/accessibility
 git push
