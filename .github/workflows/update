@@ -7,13 +7,13 @@ pwd
 git config --global user.email "figbug@gmail.com"
 git config --global user.name "Roland Rabien"
 
-echo ** Updating reFX/JUCE from WeAreRoli/JUCE
+echo ** Updating reFX/JUCE from juce-framework/JUCE
 
 git checkout develop
 
 echo ** Setup remote
 git remote -v
-git remote add upstream https://github.com/WeAreRoli/JUCE.git
+git remote add upstream https://github.com/juce-framework/JUCE.git
 git remote -v
 
 echo ** Fetch remote
@@ -26,4 +26,9 @@ git push
 echo ** Update reFX/develop
 git checkout reFX/develop
 git merge develop
+git push
+
+echo ** Update accessability
+git checkout accessibility
+git merge upstream/accessibility
 git push
