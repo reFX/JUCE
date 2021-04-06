@@ -779,6 +779,61 @@ public:
         valueWhenLastDragged = owner.proportionOfLengthToValue (newPos);
     }
 
+	bool handleDeltaDrag (const MouseEvent& e)
+	{
+		auto mousePos = (isHorizontal() || style == RotaryHorizontalDrag) ? e.position.x : e.position.y;
+		double newPos = 0;
+
+		if (style == RotaryHorizontalDrag
+			|| style == RotaryVerticalDrag
+			|| style == IncDecButtons
+			|| ((style == LinearHorizontal || style == LinearVertical || style == LinearBar || style == LinearBarVertical)
+				&& ! snapsToMousePos))
+		{
+			auto mouseDiff = (style == RotaryHorizontalDrag
+								|| style == LinearHorizontal
+								|| style == LinearBar
+								|| (style == IncDecButtons && incDecDragDirectionIsHorizontal()))
+							  ? e.position.x - mousePosWhenLastDragged.x
+							  : mousePosWhenLastDragged.y - e.position.y;
+
+			newPos = owner.valueToProportionOfLength (valueWhenLastDragged)
+					   + mouseDiff * (1.0 / pixelsForFullDragExtent);
+
+			if (style == IncDecButtons)
+			{
+				incButton->setState (mouseDiff < 0 ? Button::buttonNormal : Button::buttonDown);
+				decButton->setState (mouseDiff > 0 ? Button::buttonNormal : Button::buttonDown);
+			}
+		}
+		else if (style == RotaryHorizontalVerticalDrag)
+		{
+			auto mouseDiff = (e.position.x - mousePosWhenLastDragged.x)
+							   + (mousePosWhenLastDragged.y - e.position.y);
+
+			newPos = owner.valueToProportionOfLength (valueWhenLastDragged)
+					   + mouseDiff * (1.0 / pixelsForFullDragExtent);
+		}
+		else
+		{
+			newPos = (mousePos - (float) sliderRegionStart) / (double) sliderRegionSize;
+
+			if (isVertical())
+				newPos = 1.0 - newPos;
+		}
+
+		newPos = (isRotary() && ! rotaryParams.stopAtEnd) ? newPos - std::floor (newPos)
+														  : jlimit (0.0, 1.0, newPos);
+		auto newValue = owner.proportionOfLengthToValue (newPos);
+
+		if (newValue != valueWhenLastDragged || newPos == 0.0 || newPos == 1.0)
+		{
+			valueWhenLastDragged = newValue;
+			return true;
+		}
+		return false;
+	}
+
     void handleVelocityDrag (const MouseEvent& e)
     {
         bool hasHorizontalStyle =
@@ -876,6 +931,7 @@ public:
              && ! ((style == LinearBar || style == LinearBarVertical)
                     && e.mouseWasClicked() && valueBox != nullptr && valueBox->isEditable()))
         {
+			bool updateLastDrag = true;
             DragMode dragMode = notDragging;
 
             if (style == Rotary)
@@ -895,8 +951,16 @@ public:
 
                 if (isAbsoluteDragMode (e.mods) || (normRange.end - normRange.start) / sliderRegionSize < normRange.interval)
                 {
-                    dragMode = absoluteDrag;
-                    handleAbsoluteDrag (e);
+					if (e.source.isUnboundedMouseMovementEnabled())
+					{
+						dragMode = deltaDrag;
+						updateLastDrag = handleDeltaDrag (e);
+					}
+					else
+					{
+						dragMode = absoluteDrag;
+						handleAbsoluteDrag (e);
+					}
                 }
                 else
                 {
@@ -933,7 +997,8 @@ public:
                     minMaxDiff = static_cast<double> (valueMax.getValue()) - static_cast<double> (valueMin.getValue());
             }
 
-            mousePosWhenLastDragged = e.position;
+			if (updateLastDrag)
+				mousePosWhenLastDragged = e.position;
         }
     }
 
