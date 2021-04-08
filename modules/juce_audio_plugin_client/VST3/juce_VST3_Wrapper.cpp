@@ -47,6 +47,7 @@
 #include "../utility/juce_IncludeModuleHeaders.h"
 #include "../utility/juce_WindowsHooks.h"
 #include "../utility/juce_FakeMouseMoveGenerator.h"
+#include "../utility/juce_LinuxMessageThread.h"
 #include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
 #include <juce_audio_processors/format_types/juce_VST3Common.h>
 
@@ -101,7 +102,165 @@ using namespace Steinberg;
 #endif
 
 #if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
-  extern JUCE_API double getScaleFactorForWindow (HWND);
+ extern JUCE_API double getScaleFactorForWindow (HWND);
+#endif
+
+//==============================================================================
+#if JUCE_LINUX || JUCE_BSD
+
+class EventHandler final  : public Steinberg::Linux::IEventHandler
+{
+public:
+    EventHandler() = default;
+
+    ~EventHandler()
+    {
+        jassert (hostRunLoops.size() == 0);
+
+        if (! messageThread->isRunning())
+            messageThread->start();
+    }
+
+    JUCE_DECLARE_VST3_COM_REF_METHODS
+
+    tresult PLUGIN_API queryInterface (const TUID targetIID, void** obj) override
+    {
+        TEST_FOR_AND_RETURN_IF_VALID (targetIID, Steinberg::Linux::IEventHandler)
+
+        *obj = nullptr;
+        return kNoInterface;
+    }
+
+    void PLUGIN_API onFDIsSet (Steinberg::Linux::FileDescriptor fd) override
+    {
+        updateCurrentMessageThread();
+
+        auto it = fdCallbackMap.find (fd);
+
+        if (it != fdCallbackMap.end())
+            it->second (fd);
+    }
+
+    //==============================================================================
+    void registerHandlerForFrame (IPlugFrame* plugFrame)
+    {
+        if (auto* runLoop = getRunLoopFromFrame (plugFrame))
+        {
+            if (hostRunLoops.contains (runLoop))
+                runLoop->unregisterEventHandler (this);
+
+            hostRunLoops.add (runLoop);
+
+            fdCallbackMap.clear();
+
+            for (auto& cb : getFdReadCallbacks())
+            {
+                fdCallbackMap[cb.first] = cb.second;
+                runLoop->registerEventHandler (this, cb.first);
+            }
+
+            updateCurrentMessageThread();
+        }
+    }
+
+    void unregisterHandlerForFrame (IPlugFrame* plugFrame)
+    {
+        if (auto* runLoop = getRunLoopFromFrame (plugFrame))
+        {
+            hostRunLoops.remove (runLoop);
+
+            if (! hostRunLoops.contains (runLoop))
+                runLoop->unregisterEventHandler (this);
+        }
+    }
+
+private:
+    //=============================================================================
+    class HostRunLoopInterfaces
+    {
+    public:
+        HostRunLoopInterfaces() = default;
+
+        void add (Steinberg::Linux::IRunLoop* runLoop)
+        {
+            if (auto* refCountedRunLoop = find (runLoop))
+            {
+                ++(refCountedRunLoop->refCount);
+                return;
+            }
+
+            runLoops.push_back ({ runLoop, 1 });
+        }
+
+        void remove (Steinberg::Linux::IRunLoop* runLoop)
+        {
+            if (auto* refCountedRunLoop = find (runLoop))
+                if (--(refCountedRunLoop->refCount) == 0)
+                    runLoops.erase (std::find (runLoops.begin(), runLoops.end(), runLoop));
+        }
+
+        size_t size() const noexcept                         { return runLoops.size(); }
+        bool contains (Steinberg::Linux::IRunLoop* runLoop)  { return find (runLoop) != nullptr; }
+
+    private:
+        struct RefCountedRunLoop
+        {
+            Steinberg::Linux::IRunLoop* runLoop = nullptr;
+            int refCount = 0;
+
+            bool operator== (const Steinberg::Linux::IRunLoop* other) const noexcept { return runLoop == other; }
+        };
+
+        RefCountedRunLoop* find (const Steinberg::Linux::IRunLoop* runLoop)
+        {
+            auto iter = std::find (runLoops.begin(), runLoops.end(), runLoop);
+
+            if (iter != runLoops.end())
+                return &(*iter);
+
+            return nullptr;
+        }
+
+        std::vector<RefCountedRunLoop> runLoops;
+
+        JUCE_DECLARE_NON_MOVEABLE (HostRunLoopInterfaces)
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HostRunLoopInterfaces)
+    };
+
+    static Steinberg::Linux::IRunLoop* getRunLoopFromFrame (IPlugFrame* plugFrame)
+    {
+        Steinberg::Linux::IRunLoop* runLoop = nullptr;
+
+        if (plugFrame != nullptr)
+            plugFrame->queryInterface (Steinberg::Linux::IRunLoop::iid, (void**) &runLoop);
+
+        jassert (runLoop != nullptr);
+        return runLoop;
+    }
+
+    void updateCurrentMessageThread()
+    {
+        if (! MessageManager::getInstance()->isThisTheMessageThread())
+        {
+            if (messageThread->isRunning())
+                messageThread->stop();
+
+            MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+        }
+    }
+
+    SharedResourcePointer<MessageThread> messageThread;
+
+    std::atomic<int> refCount { 1 };
+
+    HostRunLoopInterfaces hostRunLoops;
+    std::unordered_map<int, std::function<void (int)>> fdCallbackMap;
+
+    //==============================================================================
+    JUCE_DECLARE_NON_MOVEABLE (EventHandler)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EventHandler)
+};
+
 #endif
 
 //==============================================================================
@@ -1165,15 +1324,13 @@ private:
     //==============================================================================
     class JuceVST3Editor  : public Vst::EditorView,
                             public Steinberg::IPlugViewContentScaleSupport,
-                           #if JUCE_LINUX || JUCE_BSD
-                            public Steinberg::Linux::IEventHandler,
-                           #endif
                             private Timer
     {
     public:
         JuceVST3Editor (JuceVST3EditController& ec, AudioProcessor& p)
           : Vst::EditorView (&ec, nullptr),
-            owner (&ec), pluginInstance (p)
+            owner (&ec),
+            pluginInstance (p)
         {
             createContentWrapperComponentIfNeeded();
 
@@ -1193,20 +1350,6 @@ private:
         }
 
         REFCOUNT_METHODS (Vst::EditorView)
-
-        //==============================================================================
-       #if JUCE_LINUX || JUCE_BSD
-        void PLUGIN_API onFDIsSet (Steinberg::Linux::FileDescriptor fd) override
-        {
-            if (plugFrame != nullptr)
-            {
-                auto it = fdCallbackMap.find (fd);
-
-                if (it != fdCallbackMap.end())
-                    it->second (fd);
-            }
-        }
-       #endif
 
         //==============================================================================
         tresult PLUGIN_API isPlatformTypeSupported (FIDString type) override
@@ -1231,6 +1374,10 @@ private:
             if (parent == nullptr || isPlatformTypeSupported (type) == kResultFalse)
                 return kResultFalse;
 
+           #if JUCE_LINUX || JUCE_BSD
+            eventHandler->registerHandlerForFrame (plugFrame);
+           #endif
+
             systemWindow = parent;
 
             createContentWrapperComponentIfNeeded();
@@ -1243,17 +1390,6 @@ private:
             #if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
              component->checkHostWindowScaleFactor();
              component->startTimer (500);
-            #endif
-
-            #if JUCE_LINUX || JUCE_BSD
-             if (auto* runLoop = getHostRunLoop())
-             {
-                 for (auto& cb : getFdReadCallbacks())
-                 {
-                     fdCallbackMap[cb.first] = cb.second;
-                     runLoop->registerEventHandler (this, cb.first);
-                 }
-             }
             #endif
 
            #else
@@ -1277,12 +1413,7 @@ private:
             {
                #if JUCE_WINDOWS
                 component->removeFromDesktop();
-               #elif JUCE_LINUX || JUCE_BSD
-                fdCallbackMap.clear();
-
-                if (auto* runLoop = getHostRunLoop())
-                    runLoop->unregisterEventHandler (this);
-               #else
+               #elif JUCE_MAC
                 if (macHostWindow != nullptr)
                 {
                     juce::detachComponentFromWindowRefVST (component.get(), macHostWindow, isNSView);
@@ -1292,6 +1423,10 @@ private:
 
                 component = nullptr;
             }
+
+           #if JUCE_LINUX || JUCE_BSD
+            eventHandler->unregisterHandlerForFrame (plugFrame);
+           #endif
 
             return CPluginView::removed();
         }
@@ -1683,6 +1818,10 @@ private:
         {
             if (component == nullptr)
             {
+               #if JUCE_LINUX || JUCE_BSD
+                const MessageManagerLock mmLock;
+               #endif
+
                 component.reset (new ContentWrapperComponent (*this));
                 component->createEditor (pluginInstance);
             }
@@ -1691,10 +1830,30 @@ private:
         //==============================================================================
         ScopedJuceInitialiser_GUI libraryInitialiser;
 
+       #if JUCE_LINUX || JUCE_BSD
+        SharedResourcePointer<MessageThread> messageThread;
+        SharedResourcePointer<EventHandler> eventHandler;
+       #endif
+
         VSTComSmartPtr<JuceVST3EditController> owner;
         AudioProcessor& pluginInstance;
 
+       #if JUCE_LINUX || JUCE_BSD
+        struct MessageManagerLockedDeleter
+        {
+            template <typename ObjectType>
+            void operator() (ObjectType* object) const noexcept
+            {
+                const MessageManagerLock mmLock;
+                delete object;
+            }
+        };
+
+        std::unique_ptr<ContentWrapperComponent, MessageManagerLockedDeleter> component;
+       #else
         std::unique_ptr<ContentWrapperComponent> component;
+       #endif
+
         friend struct ContentWrapperComponent;
 
        #if JUCE_MAC
@@ -1723,20 +1882,6 @@ private:
 
         #if JUCE_WINDOWS
          WindowsHooks hooks;
-        #elif JUCE_LINUX || JUCE_BSD
-         std::unordered_map<int, std::function<void (int)>> fdCallbackMap;
-
-         ::Display* display = XWindowSystem::getInstance()->getDisplay();
-
-         Steinberg::Linux::IRunLoop* getHostRunLoop()
-         {
-             Steinberg::Linux::IRunLoop* runLoop = nullptr;
-
-             if (plugFrame != nullptr)
-                 plugFrame->queryInterface (Steinberg::Linux::IRunLoop::iid, (void**) &runLoop);
-
-             return runLoop;
-         }
         #endif
 
        #endif
@@ -1789,7 +1934,7 @@ public:
         // and not AudioChannelSet::discreteChannels (2) etc.
         jassert (checkBusFormatsAreNotDiscrete());
 
-        comPluginInstance = new JuceAudioProcessor (pluginInstance);
+        comPluginInstance = VSTComSmartPtr<JuceAudioProcessor> { new JuceAudioProcessor (pluginInstance) };
 
         zerostruct (processContext);
 
@@ -1872,7 +2017,7 @@ public:
         if (juceVST3EditController != nullptr)
             juceVST3EditController->vst3IsPlaying = false;
 
-        juceVST3EditController = nullptr;
+        juceVST3EditController = {};
         return kResultTrue;
     }
 
@@ -1884,7 +2029,7 @@ public:
 
             if (message->getAttributes()->getInt ("JuceVST3EditController", value) == kResultTrue)
             {
-                juceVST3EditController = (JuceVST3EditController*) (pointer_sized_int) value;
+                juceVST3EditController = VSTComSmartPtr<JuceVST3EditController> { (JuceVST3EditController*) (pointer_sized_int) value };
 
                 if (juceVST3EditController != nullptr)
                     juceVST3EditController->setAudioProcessor (comPluginInstance);
@@ -2995,19 +3140,50 @@ private:
     //==============================================================================
     ScopedJuceInitialiser_GUI libraryInitialiser;
 
-    std::atomic<int> refCount { 1 };
+   #if JUCE_LINUX || JUCE_BSD
+    SharedResourcePointer<MessageThread> messageThread;
+   #endif
 
-    AudioProcessor* pluginInstance;
+    std::atomic<int> refCount { 1 };
+    AudioProcessor* pluginInstance = nullptr;
+
+   #if JUCE_LINUX || JUCE_BSD
+    template <class T>
+    struct LockedVSTComSmartPtr
+    {
+        LockedVSTComSmartPtr() = default;
+        LockedVSTComSmartPtr (const VSTComSmartPtr<T>& ptrIn)  : ptr (ptrIn)  {}
+
+        ~LockedVSTComSmartPtr()
+        {
+            const MessageManagerLock mmLock;
+            ptr = {};
+        }
+
+        T* operator->()               { return ptr.operator->(); }
+        operator T*() const noexcept  { return ptr.get(); }
+
+        template <typename... Args>
+        bool loadFrom (Args&&... args)  { return ptr.loadFrom (std::forward<Args> (args)...); }
+
+    private:
+        VSTComSmartPtr<T> ptr;
+    };
+
+    LockedVSTComSmartPtr<Vst::IHostApplication> host;
+    LockedVSTComSmartPtr<JuceAudioProcessor> comPluginInstance;
+    LockedVSTComSmartPtr<JuceVST3EditController> juceVST3EditController;
+   #else
     VSTComSmartPtr<Vst::IHostApplication> host;
     VSTComSmartPtr<JuceAudioProcessor> comPluginInstance;
     VSTComSmartPtr<JuceVST3EditController> juceVST3EditController;
+   #endif
 
     /**
         Since VST3 does not provide a way of knowing the buffer size and sample rate at any point,
         this object needs to be copied on every call to process() to be up-to-date...
     */
     Vst::ProcessContext processContext;
-
     Vst::ProcessSetup processSetup;
 
     MidiBuffer midiBuffer;
@@ -3273,6 +3449,10 @@ struct JucePluginFactory  : public IPluginFactory3
     tresult PLUGIN_API createInstance (FIDString cid, FIDString sourceIid, void** obj) override
     {
         ScopedJuceInitialiser_GUI libraryInitialiser;
+
+       #if JUCE_LINUX || JUCE_BSD
+        SharedResourcePointer<MessageThread> messageThread;
+       #endif
 
         *obj = nullptr;
 
