@@ -693,24 +693,21 @@ private:
             if (shouldWrap (g.getGlyph (split).getRight()))
                 break;
 
-        split = jmax (1, split);
-
-        longAtom.numChars = (uint16) split;
-        longAtom.width = g.getGlyph (split - 1).getRight();
-
-        if (split == numRemaining)
-        {
-            beginNewLine();
-            atomRight = atomX + longAtom.width;
-            return true;
-        }
-
-        if (shouldStartNewLine)
-            lineY += lineHeight * lineSpacing;
+        const auto numChars = jmax (1, split);
+        longAtom.numChars = (uint16) numChars;
+        longAtom.width = g.getGlyph (numChars - 1).getRight();
 
         atomX = getJustificationOffsetX (longAtom.width);
-        atomRight = atomX + longAtom.width;
 
+        if (shouldStartNewLine)
+        {
+            if (split == numRemaining)
+                beginNewLine();
+            else
+                lineY += lineHeight * lineSpacing;
+        }
+
+        atomRight = atomX + longAtom.width;
         return true;
     }
 
@@ -1439,12 +1436,12 @@ int TextEditor::getWordWrapWidth() const
 
 int TextEditor::getMaximumTextWidth() const
 {
-    return viewport->getMaximumVisibleWidth() - leftIndent - rightEdgeSpace;
+    return jmax (1, viewport->getMaximumVisibleWidth() - leftIndent - rightEdgeSpace);
 }
 
 int TextEditor::getMaximumTextHeight() const
 {
-    return viewport->getMaximumVisibleHeight() - topIndent;
+    return jmax (1, viewport->getMaximumVisibleHeight() - topIndent);
 }
 
 void TextEditor::checkLayout()
