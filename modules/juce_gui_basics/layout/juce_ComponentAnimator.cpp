@@ -151,6 +151,7 @@ public:
     {
         ProxyComponent (Component& c)
         {
+            setAccessible (false);
             setWantsKeyboardFocus (false);
             setBounds (c.getBounds());
             setTransform (c.getTransform());
