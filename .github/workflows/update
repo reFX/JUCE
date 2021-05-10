@@ -27,8 +27,3 @@ echo ** Update reFX/develop
 git checkout reFX/develop
 git merge develop
 git push
-
-echo ** Update accessability
-git checkout --track origin/accessibility
-git merge upstream/accessibility
-git push
