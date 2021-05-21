@@ -652,15 +652,7 @@ public:
     tresult PLUGIN_API initialize (FUnknown* context) override
     {
         if (hostContext != context)
-        {
-            if (hostContext != nullptr)
-                hostContext->release();
-
             hostContext = context;
-
-            if (hostContext != nullptr)
-                hostContext->addRef();
-        }
 
         return kResultTrue;
     }
@@ -956,10 +948,7 @@ public:
     void setAudioProcessor (JuceAudioProcessor* audioProc)
     {
         if (audioProcessor != audioProc)
-        {
-            audioProcessor = audioProc;
-            setupParameters();
-        }
+            installAudioProcessor (audioProc);
     }
 
     tresult PLUGIN_API connect (IConnectionPoint* other) override
@@ -971,7 +960,7 @@ public:
             if (! audioProcessor.loadFrom (other))
                 sendIntMessage ("JuceVST3EditController", (Steinberg::int64) (pointer_sized_int) this);
             else
-                setupParameters();
+                installAudioProcessor (audioProcessor);
 
             return result;
         }
@@ -1335,10 +1324,14 @@ private:
     float lastScaleFactorReceived = 1.0f;
    #endif
 
-    void setupParameters()
+    void installAudioProcessor (const VSTComSmartPtr<JuceAudioProcessor>& newAudioProcessor)
     {
+        audioProcessor = newAudioProcessor;
+
         if (auto* pluginInstance = getPluginInstance())
         {
+            lastLatencySamples = pluginInstance->getLatencySamples();
+
             pluginInstance->addListener (this);
 
             // as the bypass is not part of the regular parameters we need to listen for it explicitly
