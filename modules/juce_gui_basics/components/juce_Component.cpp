@@ -3047,7 +3047,7 @@ bool Component::isMouseOver (bool includeChildren) const
 
         if (c != nullptr && (c == this || (includeChildren && isParentOf (c))))
             if (ms.isDragging() || ! (ms.isTouch() || ms.isPen()))
-                if (c->reallyContains (c->getLocalPoint (nullptr, ms.getScreenPosition()).roundToInt(), false))
+                if (c->reallyContains (c->getLocalPoint (nullptr, ms.getScreenPosition().roundToInt()), false))
                     return true;
     }
 
