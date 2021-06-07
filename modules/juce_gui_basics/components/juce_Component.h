@@ -1453,7 +1453,7 @@ public:
 
         @see setEnabled, enablementChanged
     */
-    bool isEnabled() const noexcept;
+    bool isEnabled ( bool includeParents = true ) const noexcept;
 
     /** Enables or disables this component.
 

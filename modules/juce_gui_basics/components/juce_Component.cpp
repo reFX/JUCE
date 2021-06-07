@@ -2990,8 +2990,11 @@ void JUCE_CALLTYPE Component::unfocusAllComponents()
 }
 
 //==============================================================================
-bool Component::isEnabled() const noexcept
+bool Component::isEnabled ( bool includeParents ) const noexcept
 {
+	if ( ! includeParents )
+		return ! flags.isDisabledFlag;
+
     return (! flags.isDisabledFlag)
             && (parentComponent == nullptr || parentComponent->isEnabled());
 }
