@@ -2574,6 +2574,10 @@ private:
     void sendEnablementChangeMessage();
     void sendVisibilityChangeMessage();
 
+    bool containsInternal (Point<float>);
+    bool reallyContainsInternal (Point<float>, bool);
+    Component* getComponentAtInternal (Point<float>);
+
     struct ComponentHelpers;
     friend struct ComponentHelpers;
 
