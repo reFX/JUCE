@@ -552,16 +552,15 @@ struct VST3HostContext  : public Vst::IComponentHandler,  // From VST V3.0.0
             return kResultOk;
         }
 
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IComponentHandler)
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IComponentHandler2)
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IComponentHandler3)
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IContextMenuTarget)
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IHostApplication)
-        TEST_FOR_AND_RETURN_IF_VALID (iid, Vst::IUnitHandler)
-        TEST_FOR_COMMON_BASE_AND_RETURN_IF_VALID (iid, FUnknown, Vst::IComponentHandler)
-
-        *obj = nullptr;
-        return kNotImplemented;
+        return testForMultiple (*this,
+                                iid,
+                                UniqueBase<Vst::IComponentHandler>{},
+                                UniqueBase<Vst::IComponentHandler2>{},
+                                UniqueBase<Vst::IComponentHandler3>{},
+                                UniqueBase<Vst::IContextMenuTarget>{},
+                                UniqueBase<Vst::IHostApplication>{},
+                                UniqueBase<Vst::IUnitHandler>{},
+                                SharedBase<FUnknown, Vst::IComponentHandler>{}).extract (obj);
     }
 
 private:
@@ -2256,6 +2255,27 @@ public:
         return true;
     }
 
+    void getExtensions (ExtensionsVisitor& visitor) const override
+    {
+        struct Extensions : public ExtensionsVisitor::VST3Client
+        {
+            explicit Extensions (const VST3PluginInstance* instanceIn) : instance (instanceIn) {}
+
+            void* getIComponentPtr() const noexcept override   { return instance->holder->component; }
+
+            MemoryBlock getPreset() const override             { return instance->getStateForPresetFile(); }
+
+            bool setPreset (const MemoryBlock& rawData) const override
+            {
+                return instance->setStateFromPresetFile (rawData);
+            }
+
+            const VST3PluginInstance* instance = nullptr;
+        };
+
+        visitor.visitVST3Client (Extensions { this });
+    }
+
     void* getPlatformSpecificData() override   { return holder->component; }
 
     void updateMidiMappings()
@@ -2622,11 +2642,10 @@ public:
 
         tresult PLUGIN_API queryInterface (const TUID queryIid, void** obj) override
         {
-            TEST_FOR_AND_RETURN_IF_VALID (queryIid, Vst::IAttributeList)
-            TEST_FOR_COMMON_BASE_AND_RETURN_IF_VALID (queryIid, FUnknown, Vst::IAttributeList)
-
-            *obj = nullptr;
-            return kNotImplemented;
+            return testForMultiple (*this,
+                                    queryIid,
+                                    UniqueBase<Vst::IAttributeList>{},
+                                    SharedBase<FUnknown, Vst::IAttributeList>{}).extract (obj);
         }
 
         tresult PLUGIN_API setInt    (AttrID, Steinberg::int64) override                 { return kOutOfMemory; }
@@ -2857,7 +2876,25 @@ public:
         }
     }
 
-    bool setStateFromPresetFile (const MemoryBlock& rawData)
+    MemoryBlock getStateForPresetFile() const
+    {
+        VSTComSmartPtr<Steinberg::MemoryStream> memoryStream = new Steinberg::MemoryStream();
+
+        if (memoryStream == nullptr || holder->component == nullptr)
+            return {};
+
+        const auto saved = Steinberg::Vst::PresetFile::savePreset (memoryStream,
+                                                                   holder->cidOfComponent,
+                                                                   holder->component,
+                                                                   editController);
+
+        if (saved)
+            return { memoryStream->getData(), static_cast<size_t> (memoryStream->getSize()) };
+
+        return {};
+    }
+
+    bool setStateFromPresetFile (const MemoryBlock& rawData) const
     {
         MemoryBlock rawDataCopy (rawData);
         VSTComSmartPtr<Steinberg::MemoryStream> memoryStream = new Steinberg::MemoryStream (rawDataCopy.getData(), (int) rawDataCopy.getSize());
@@ -3539,8 +3576,8 @@ tresult VST3HostContext::notifyProgramListChange (Vst::ProgramListID, Steinberg:
 
 //==============================================================================
 //==============================================================================
-VST3PluginFormat::VST3PluginFormat() {}
-VST3PluginFormat::~VST3PluginFormat() {}
+VST3PluginFormat::VST3PluginFormat()  = default;
+VST3PluginFormat::~VST3PluginFormat() = default;
 
 bool VST3PluginFormat::setStateFromVSTPresetFile (AudioPluginInstance* api, const MemoryBlock& rawData)
 {
