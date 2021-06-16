@@ -2390,6 +2390,8 @@ void Component::internalMouseEnter (MouseInputSource source, Point<float> relati
                          this, this, time, relativePos, time, 0, false);
     mouseEnter (me);
 
+    flags.cachedMouseInsideComponent = true;
+
     if (checker.shouldBailOut())
         return;
 
@@ -2409,6 +2411,8 @@ void Component::internalMouseExit (MouseInputSource source, Point<float> relativ
 
     if (flags.repaintOnMouseActivityFlag)
         repaint();
+
+    flags.cachedMouseInsideComponent = false;
 
     BailOutChecker checker (this);
 
@@ -3056,6 +3060,9 @@ void Component::sendEnablementChangeMessage()
 //==============================================================================
 bool Component::isMouseOver (bool includeChildren) const
 {
+    if (! MessageManager::getInstance()->isThisTheMessageThread())
+        return flags.cachedMouseInsideComponent;
+
     for (auto& ms : Desktop::getInstance().getMouseSources())
     {
         auto* c = ms.getComponentUnderMouse();
