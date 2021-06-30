@@ -466,7 +466,7 @@ Colour Colour::withMultipliedLightness (float amount) const noexcept
 //==============================================================================
 Colour Colour::brighter (float amount) const noexcept
 {
-    jassert (0.0f <= amount);
+    jassert (amount >= 0.0f);
     amount = 1.0f / (1.0f + amount);
 
     return Colour ((uint8) (255 - (amount * (255 - getRed()))),
@@ -477,7 +477,7 @@ Colour Colour::brighter (float amount) const noexcept
 
 Colour Colour::darker (float amount) const noexcept
 {
-    jassert (0.0f <= amount);
+    jassert (amount >= 0.0f);
     amount = 1.0f / (1.0f + amount);
 
     return Colour ((uint8) (amount * getRed()),
