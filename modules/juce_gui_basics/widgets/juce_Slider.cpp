@@ -1698,6 +1698,7 @@ void Slider::valueChanged() {}
 void Slider::setPopupMenuEnabled (bool menuEnabled)         { pimpl->menuEnabled = menuEnabled; }
 void Slider::setScrollWheelEnabled (bool enabled)           { pimpl->scrollWheelEnabled = enabled; }
 
+bool Slider::isScrollWheelEnabled() const noexcept          { return pimpl->scrollWheelEnabled; }
 bool Slider::isHorizontal() const noexcept                  { return pimpl->isHorizontal(); }
 bool Slider::isVertical() const noexcept                    { return pimpl->isVertical(); }
 bool Slider::isRotary() const noexcept                      { return pimpl->isRotary(); }
