@@ -532,6 +532,7 @@ void ListBox::setModel (ListBoxModel* const newModel)
 }
 
 void ListBox::setMultipleSelectionEnabled (bool b) noexcept         { multipleSelection = b; }
+bool ListBox::getMultipleSelectionEnabled() noexcept				{ return multipleSelection; }
 void ListBox::setClickingTogglesRowSelection (bool b) noexcept      { alwaysFlipSelection = b; }
 void ListBox::setRowSelectedOnMouseDown (bool b) noexcept           { selectOnMouseDown = b; }
 

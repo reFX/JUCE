@@ -225,6 +225,8 @@ public:
     */
     void setMultipleSelectionEnabled (bool shouldBeEnabled) noexcept;
 
+    bool getMultipleSelectionEnabled() noexcept;
+
     /** If enabled, this makes the listbox flip the selection status of
         each row that the user clicks, without affecting other selected rows.
 
