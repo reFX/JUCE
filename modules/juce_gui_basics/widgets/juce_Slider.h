@@ -961,17 +961,6 @@ public:
         virtual SliderLayout getSliderLayout (Slider&) = 0;
     };
 
-	//==============================================================================
-	class DragInProgress
-	{
-	public:
-		DragInProgress ( Slider& );
-		~DragInProgress();
-
-	private:
-		Slider& owner;
-	};
-
     //==============================================================================
     /** @internal */
     void paint (Graphics&) override;

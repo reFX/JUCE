@@ -1752,17 +1752,6 @@ void Slider::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel
         Component::mouseWheelMove (e, wheel);
 }
 
-Slider::DragInProgress::DragInProgress ( Slider& s )
-	: owner ( s )
-{
-	owner.pimpl->sendDragStart();
-}
-
-Slider::DragInProgress::~DragInProgress()
-{
-	owner.pimpl->sendDragEnd();
-}
-
 //==============================================================================
 class SliderAccessibilityHandler  : public AccessibilityHandler
 {
