@@ -151,7 +151,6 @@ public:
     {
         ProxyComponent (Component& c)
         {
-            setAccessible (false);
             setWantsKeyboardFocus (false);
             setBounds (c.getBounds());
             setTransform (c.getTransform());
@@ -182,6 +181,11 @@ public:
         }
 
     private:
+        std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override
+        {
+            return createIgnoredAccessibilityHandler (*this);
+        }
+
         Image image;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProxyComponent)
