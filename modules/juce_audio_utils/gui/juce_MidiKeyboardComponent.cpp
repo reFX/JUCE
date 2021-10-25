@@ -285,7 +285,7 @@ int MidiKeyboardComponent::getNoteAtPosition (Point<float> p)
 
 int MidiKeyboardComponent::xyToNote (Point<float> pos, float& mousePositionVelocity)
 {
-    if (! reallyContains (pos.toInt(), false))
+    if (! reallyContains (pos, false))
         return -1;
 
     auto p = pos;

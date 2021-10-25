@@ -1412,6 +1412,11 @@ bool Component::reallyContains (Point<int> point, bool returnTrueIfWithinAChild)
     return reallyContainsInternal (point.toFloat(), returnTrueIfWithinAChild);
 }
 
+bool Component::reallyContains (Point<float> point, bool returnTrueIfWithinAChild)
+{
+    return reallyContainsInternal (point, returnTrueIfWithinAChild);
+}
+
 bool Component::reallyContainsInternal (Point<float> point, bool returnTrueIfWithinAChild)
 {
     if (! containsInternal (point))
