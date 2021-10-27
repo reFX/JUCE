@@ -946,8 +946,6 @@ public:
     */
     bool reallyContains (Point<int> localPoint, bool returnTrueIfWithinAChild);
 
-    bool reallyContains (Point<float> localPoint, bool returnTrueIfWithinAChild);
-
     /** Returns the component at a certain point within this one.
 
         @param x    the x coordinate to test, relative to this component's left edge.
