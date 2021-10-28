@@ -3867,8 +3867,7 @@ private:
                 break;
 
             case WM_CLOSE:
-                if (! component.isCurrentlyBlockedByAnotherModalComponent())
-                    handleUserClosingWindow();
+                handleUserClosingWindow();
 
                 return 0;
 
