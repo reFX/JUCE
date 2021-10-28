@@ -3908,9 +3908,6 @@ private:
                 switch (wParam & 0xfff0)
                 {
                 case SC_CLOSE:
-                    if (sendInputAttemptWhenModalMessage())
-                        return 0;
-
                     if (hasTitleBar())
                     {
                         PostMessage (h, WM_CLOSE, 0, 0);
