@@ -1569,6 +1569,11 @@ void Slider::setPopupDisplayEnabled (bool showOnDrag, bool showOnHover, Componen
     pimpl->popupHoverTimeout = hoverTimeout;
 }
 
+void Slider::setPopupDisplayParent (Component* parent)
+{
+    pimpl->parentForPopupDisplay = parent;
+}
+
 Component* Slider::getCurrentPopupDisplay() const noexcept      { return pimpl->popupDisplay.get(); }
 
 //==============================================================================

@@ -682,6 +682,8 @@ public:
                                  Component* parentComponentToUse,
                                  int hoverTimeout = 2000);
 
+    void setPopupDisplayParent (Component* parent);
+
     /** If a popup display is enabled and is currently visible, this returns the component
         that is being shown, or nullptr if none is currently in use.
         @see setPopupDisplayEnabled
