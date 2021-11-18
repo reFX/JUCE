@@ -90,7 +90,7 @@ public:
     static String getOperatingSystemName();
 
    #ifdef JUCE_WINDOWS
-	juce::String getWinVersionString ();
+	static String getWinVersionString ();
    #endif
 
     /** Returns true if the OS is 64-bit, or false for a 32-bit OS. */
