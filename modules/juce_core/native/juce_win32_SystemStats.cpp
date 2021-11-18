@@ -236,6 +236,16 @@ static DebugFlagsInitialiser debugFlagsInitialiser;
  }
 #endif
 
+juce::String SystemStats::getWinVersionString ()
+{
+	auto versionInfo = getWindowsVersionInfo();
+	auto major = versionInfo.dwMajorVersion;
+	auto minor = versionInfo.dwMinorVersion;
+	auto build = versionInfo.dwBuildNumber;
+
+	return juce::String::formatted ( "%d.%d.%d", major, minor, build );
+}
+
 SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
 {
    #if JUCE_MINGW
