@@ -94,6 +94,7 @@ MidiKeyboardComponent::MidiKeyboardComponent (MidiKeyboardState& s, Orientation 
 
 MidiKeyboardComponent::~MidiKeyboardComponent()
 {
+	stopTimer ();
     state.removeListener (this);
 }
 

@@ -331,9 +331,8 @@ Timer::~Timer()
     // been stopped before execution reaches this point. A simple way to achieve this
     // is to add a call to `stopTimer()` to the destructor of your class which inherits
     // from Timer.
-    jassert (! isTimerRunning()
-             || MessageManager::getInstanceWithoutCreating() == nullptr
-             || MessageManager::getInstanceWithoutCreating()->currentThreadHasLockedMessageManager());
+	// reFX says: Always stop your timers
+    jassert ( ! isTimerRunning () );
 
     stopTimer();
 }
@@ -390,6 +389,7 @@ struct LambdaInvoker  : private Timer
     void timerCallback() override
     {
         auto f = function;
+		stopTimer ();
         delete this;
         f();
     }

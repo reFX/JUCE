@@ -40,8 +40,6 @@ AudioProcessorEditor::AudioProcessorEditor (AudioProcessor* p) noexcept  : proce
 
 AudioProcessorEditor::~AudioProcessorEditor()
 {
-    splashScreen.deleteAndZero();
-
     // if this fails, then the wrapper hasn't called editorBeingDeleted() on the
     // filter for some reason..
     jassert (processor.getActiveEditor() != this);
@@ -68,9 +66,6 @@ void AudioProcessorEditor::initialise()
     */
 
     // BEGIN SECTION A
-
-    splashScreen = new JUCESplashScreen (*this);
-
     // END SECTION A
 
     attachConstrainer (&defaultConstrainer);

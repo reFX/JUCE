@@ -35,6 +35,7 @@ CaretComponent::CaretComponent (Component* const keyFocusOwner)
 
 CaretComponent::~CaretComponent()
 {
+	stopTimer ();
 }
 
 void CaretComponent::paint (Graphics& g)
