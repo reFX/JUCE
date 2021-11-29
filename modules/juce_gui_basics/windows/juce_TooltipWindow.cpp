@@ -48,7 +48,6 @@ TooltipWindow::TooltipWindow (Component* parentComp, int delayMs)
 
 TooltipWindow::~TooltipWindow()
 {
-	stopTimer ();
     hideTip();
     Desktop::getInstance().removeGlobalMouseListener (this);
 }

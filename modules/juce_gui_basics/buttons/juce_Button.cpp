@@ -33,11 +33,6 @@ struct Button::CallbackHelper  : public Timer,
 {
     CallbackHelper (Button& b) : button (b)   {}
 
-	~CallbackHelper () override
-	{
-		stopTimer ();
-	}
-
     void timerCallback() override
     {
         button.repeatTimerCallback();

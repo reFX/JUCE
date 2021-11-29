@@ -235,6 +235,7 @@ private:
     ComponentBoundsConstrainer defaultConstrainer;
     ComponentBoundsConstrainer* constrainer = nullptr;
     AudioProcessorEditorHostContext* hostContext = nullptr;
+    Component::SafePointer<Component> splashScreen;
     AffineTransform hostScaleTransform;
 
     JUCE_DECLARE_NON_COPYABLE (AudioProcessorEditor)

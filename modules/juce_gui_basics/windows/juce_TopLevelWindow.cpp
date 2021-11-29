@@ -32,11 +32,7 @@ class TopLevelWindowManager  : private Timer,
 {
 public:
     TopLevelWindowManager() {}
-    ~TopLevelWindowManager() override
-	{
-		stopTimer ();
-		clearSingletonInstance();
-	}
+    ~TopLevelWindowManager() override    { clearSingletonInstance(); }
 
     JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (TopLevelWindowManager)
 
