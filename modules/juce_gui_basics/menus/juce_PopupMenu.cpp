@@ -1289,11 +1289,6 @@ public:
         startTimerHz (20);
     }
 
-	~MouseSourceState () override
-	{
-		stopTimer ();
-	}
-
     void handleMouseEvent (const MouseEvent& e)
     {
         if (! window.windowIsStillValid())
