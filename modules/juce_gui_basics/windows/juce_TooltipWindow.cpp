@@ -217,9 +217,6 @@ void TooltipWindow::timerCallback()
     {
         const auto newTip = newComp != nullptr ? getTipFor (*newComp) : String();
 
-        lastComponentUnderMouse = newComp;
-        lastTipUnderMouse = newTip;
-
         const auto mousePos = mouseSource.getScreenPosition();
         const auto mouseMovedQuickly = (mousePos.getDistanceFrom (lastMousePos) > 12);
         lastMousePos = mousePos;
@@ -255,6 +252,9 @@ void TooltipWindow::timerCallback()
                 showTip();
             }
         }
+
+        lastComponentUnderMouse = newComp;
+        lastTipUnderMouse = newTip;
     }
 }
 
