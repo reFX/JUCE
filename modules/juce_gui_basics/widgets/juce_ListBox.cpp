@@ -1041,7 +1041,7 @@ void ListBox::repaintRow (const int rowNumber) noexcept
     repaint (getRowPosition (rowNumber, true));
 }
 
-Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, int& imageY)
+ScaledImage ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, int& imageY)
 {
     Rectangle<int> imageArea;
     auto firstRow = getRowContainingPosition (0, viewport->getY());
@@ -1063,7 +1063,8 @@ Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, in
     imageX = imageArea.getX();
     imageY = imageArea.getY();
 
-    auto listScale = Component::getApproximateScaleFactorForComponent (this);
+    const auto additionalScale = 2.0f;
+    const auto listScale = Component::getApproximateScaleFactorForComponent (this) * additionalScale;
     Image snapshot (Image::ARGB,
                     roundToInt ((float) imageArea.getWidth() * listScale),
                     roundToInt ((float) imageArea.getHeight() * listScale),
@@ -1076,9 +1077,9 @@ Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, in
             if (auto* rowComp = viewport->getComponentForRowIfOnscreen (firstRow + i))
             {
                 Graphics g (snapshot);
-                g.setOrigin (getLocalPoint (rowComp, Point<int>()) - imageArea.getPosition());
+                g.setOrigin ((getLocalPoint (rowComp, Point<int>()) - imageArea.getPosition()) * additionalScale);
 
-                auto rowScale = Component::getApproximateScaleFactorForComponent (rowComp);
+                const auto rowScale = Component::getApproximateScaleFactorForComponent (rowComp) * additionalScale;
 
                 if (g.reduceClipRegion (rowComp->getLocalBounds() * rowScale))
                 {
@@ -1091,7 +1092,7 @@ Image ListBox::createSnapshotOfRows (const SparseSet<int>& rows, int& imageX, in
         }
     }
 
-    return snapshot;
+    return { snapshot, additionalScale };
 }
 
 void ListBox::startDragAndDrop (const MouseEvent& e, const SparseSet<int>& rowsToDrag, const var& dragDescription, bool allowDraggingToOtherWindows)
