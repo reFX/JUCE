@@ -187,14 +187,6 @@ void TooltipWindow::hideTip()
     }
 }
 
-float TooltipWindow::getDesktopScaleFactor() const
-{
-    if (lastComponentUnderMouse != nullptr)
-        return Component::getApproximateScaleFactorForComponent (lastComponentUnderMouse);
-
-    return Component::getDesktopScaleFactor();
-}
-
 std::unique_ptr<AccessibilityHandler> TooltipWindow::createAccessibilityHandler()
 {
     return createIgnoredAccessibilityHandler (*this);
