@@ -63,6 +63,9 @@ bool CharacterFunctions::isWhitespace (const char character) noexcept
 
 bool CharacterFunctions::isWhitespace (const juce_wchar character) noexcept
 {
+    if (character == 0xa0)
+        return false;
+
     return iswspace ((wint_t) character) != 0;
 }
 
