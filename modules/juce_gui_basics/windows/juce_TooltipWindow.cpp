@@ -71,13 +71,13 @@ void TooltipWindow::mouseEnter (const MouseEvent& e)
 void TooltipWindow::mouseDown (const MouseEvent&)
 {
     if (isVisible())
-        dismissalMouseEventOccured = true;
+        dismissalMouseEventOccurred = true;
 }
 
 void TooltipWindow::mouseWheelMove (const MouseEvent&, const MouseWheelDetails&)
 {
     if (isVisible())
-        dismissalMouseEventOccured = true;
+        dismissalMouseEventOccurred = true;
 }
 
 void TooltipWindow::updatePosition (const String& tip, Point<int> pos, Rectangle<int> parentArea)
@@ -151,7 +151,7 @@ void TooltipWindow::displayTipInternal (Point<int> screenPos, const String& tip,
 
         toFront (false);
         manuallyShownTip = shownManually == ShownManually::yes ? tip : String();
-        dismissalMouseEventOccured = false;
+        dismissalMouseEventOccurred = false;
     }
 }
 
@@ -174,7 +174,7 @@ void TooltipWindow::hideTip()
     {
         tipShowing = {};
         manuallyShownTip = {};
-        dismissalMouseEventOccured = false;
+        dismissalMouseEventOccurred = false;
 
         removeFromDesktop();
         setVisible (false);
@@ -199,7 +199,7 @@ void TooltipWindow::timerCallback()
 
     if (manuallyShownTip.isNotEmpty())
     {
-        if (dismissalMouseEventOccured || newComp == nullptr)
+        if (dismissalMouseEventOccurred || newComp == nullptr)
             hideTip();
 
         return;
@@ -216,7 +216,7 @@ void TooltipWindow::timerCallback()
         const auto tipChanged = (newTip != lastTipUnderMouse || newComp != lastComponentUnderMouse);
         const auto now = Time::getApproximateMillisecondCounter();
 
-        if (tipChanged || dismissalMouseEventOccured || mouseMovedQuickly)
+        if (tipChanged || dismissalMouseEventOccurred || mouseMovedQuickly)
             lastCompChangeTime = now;
 
         const auto showTip = [this, &mouseSource, &mousePos, &newTip]
@@ -229,7 +229,7 @@ void TooltipWindow::timerCallback()
         {
             // if a tip is currently visible (or has just disappeared), update to a new one
             // immediately if needed..
-            if (newComp == nullptr || dismissalMouseEventOccured || newTip.isEmpty())
+            if (newComp == nullptr || dismissalMouseEventOccurred || newTip.isEmpty())
                 hideTip();
             else if (tipChanged)
                 showTip();
