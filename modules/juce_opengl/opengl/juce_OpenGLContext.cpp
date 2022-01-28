@@ -95,6 +95,44 @@ static bool contextHasTextureNpotFeature()
 class OpenGLContext::CachedImage  : public CachedComponentImage,
                                     private ThreadPoolJob
 {
+    struct AreaAndScale
+    {
+        Rectangle<int> area;
+        double scale;
+
+        auto tie() const { return std::tie (area, scale); }
+
+        auto operator== (const AreaAndScale& other) const { return tie() == other.tie(); }
+        auto operator!= (const AreaAndScale& other) const { return tie() != other.tie(); }
+    };
+
+    class LockedAreaAndScale
+    {
+    public:
+        auto get() const
+        {
+            const ScopedLock lock (mutex);
+            return data;
+        }
+
+        template <typename Fn>
+        void set (const AreaAndScale& d, Fn&& ifDifferent)
+        {
+            const auto old = [&]
+            {
+                const ScopedLock lock (mutex);
+                return std::exchange (data, d);
+            }();
+
+            if (old != d)
+                ifDifferent();
+        }
+
+    private:
+        CriticalSection mutex;
+        AreaAndScale data { {}, 1.0 };
+    };
+
 public:
     CachedImage (OpenGLContext& c, Component& comp,
                  const OpenGLPixelFormat& pixFormat, void* contextToShare)
@@ -209,8 +247,10 @@ public:
     }
 
     //==============================================================================
-    bool ensureFrameBufferSize()
+    bool ensureFrameBufferSize (Rectangle<int> viewportArea)
     {
+        JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
+
         auto fbW = cachedImageFrameBuffer.getWidth();
         auto fbH = cachedImageFrameBuffer.getHeight();
 
@@ -280,10 +320,13 @@ public:
 
         doWorkWhileWaitingForLock (true);
 
+        const auto currentAreaAndScale = areaAndScale.get();
+        const auto viewportArea = currentAreaAndScale.area;
+
         if (context.renderer != nullptr)
         {
             glViewport (0, 0, viewportArea.getWidth(), viewportArea.getHeight());
-            context.currentRenderScale = scale;
+            context.currentRenderScale = currentAreaAndScale.scale;
             context.renderer->renderOpenGL();
             clearGLError();
 
@@ -294,7 +337,7 @@ public:
         {
             if (isUpdating)
             {
-                paintComponent();
+                paintComponent (currentAreaAndScale);
 
                 if (! hasInitialised)
                     return false;
@@ -335,7 +378,7 @@ public:
                         return [window backingScaleFactor];
                 }
 
-                return scale;
+                return areaAndScale.get().scale;
             }();
            #else
             const auto displayScale = Desktop::getInstance().getDisplays().getDisplayForRect (component.getTopLevelComponent()->getScreenBounds())->scale;
@@ -354,10 +397,9 @@ public:
             auto newScale = displayScale;
            #endif
 
-            if (scale != newScale || viewportArea != newArea)
+            areaAndScale.set ({ newArea, newScale }, [&]
             {
-                scale = newScale;
-                viewportArea = newArea;
+                // Transform is only accessed when the message manager is locked
                 transform = AffineTransform::scale ((float) newArea.getWidth()  / (float) localBounds.getWidth(),
                                                     (float) newArea.getHeight() / (float) localBounds.getHeight());
 
@@ -365,7 +407,7 @@ public:
 
                 if (canTriggerUpdate)
                     invalidateAll();
-            }
+            });
         }
     }
 
@@ -387,17 +429,19 @@ public:
         }
     }
 
-    void paintComponent()
+    void paintComponent (const AreaAndScale& currentAreaAndScale)
     {
+        JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
+
         // you mustn't set your own cached image object when attaching a GL context!
         jassert (get (component) == this);
 
-        if (! ensureFrameBufferSize())
+        if (! ensureFrameBufferSize (currentAreaAndScale.area))
             return;
 
-        RectangleList<int> invalid (viewportArea);
+        RectangleList<int> invalid (currentAreaAndScale.area);
         invalid.subtract (validArea);
-        validArea = viewportArea;
+        validArea = currentAreaAndScale.area;
 
         if (! invalid.isEmpty())
         {
@@ -584,7 +628,8 @@ public:
             bindVertexArray();
         }
 
-        glViewport (0, 0, viewportArea.getWidth(), viewportArea.getHeight());
+        const auto currentViewportArea = areaAndScale.get().area;
+        glViewport (0, 0, currentViewportArea.getWidth(), currentViewportArea.getHeight());
 
         nativeContext->setSwapInterval (1);
 
@@ -714,10 +759,10 @@ public:
     Version openGLVersion;
     OpenGLFrameBuffer cachedImageFrameBuffer;
     RectangleList<int> validArea;
-    Rectangle<int> viewportArea, lastScreenBounds;
-    double scale = 1.0;
+    Rectangle<int> lastScreenBounds;
     AffineTransform transform;
     GLuint vertexArrayObject = 0;
+    LockedAreaAndScale areaAndScale;
 
     StringArray associatedObjectNames;
     ReferenceCountedArray<ReferenceCountedObject> associatedObjects;
