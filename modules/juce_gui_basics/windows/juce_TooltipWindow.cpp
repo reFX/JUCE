@@ -216,6 +216,9 @@ void TooltipWindow::timerCallback()
         const auto tipChanged = (newTip != lastTipUnderMouse || newComp != lastComponentUnderMouse);
         const auto now = Time::getApproximateMillisecondCounter();
 
+        lastComponentUnderMouse = newComp;
+        lastTipUnderMouse = newTip;
+
         if (tipChanged || dismissalMouseEventOccurred || mouseMovedQuickly)
             lastCompChangeTime = now;
 
@@ -244,9 +247,6 @@ void TooltipWindow::timerCallback()
                 showTip();
             }
         }
-
-        lastComponentUnderMouse = newComp;
-        lastTipUnderMouse = newTip;
     }
 }
 
