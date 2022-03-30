@@ -119,6 +119,7 @@ function(_juce_extract_metadata_block delim_str file_with_block out_dict)
     set(append NO)
 
     foreach(line IN LISTS module_header_contents)
+        string(REPLACE "\t" " " line "${line}")
         if(NOT append)
             if(line MATCHES " *BEGIN_${delim_str} *")
                 set(append YES)
