@@ -43,8 +43,7 @@
   minimumCppStandard: 14
 
   dependencies:       juce_audio_processors, juce_audio_formats, juce_audio_devices
-  OSXFrameworks:      CoreAudioKit DiscRecording
-  iOSFrameworks:      CoreAudioKit
+  OSXFrameworks:      DiscRecording
 
  END_JUCE_MODULE_DECLARATION
 

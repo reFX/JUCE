@@ -131,7 +131,7 @@ void LibraryModule::addLibsToExporter (ProjectExporter& exporter) const
 
         if (project.isAUPluginHost())
         {
-            xcodeExporter.xcodeFrameworks.add ("CoreAudioKit");
+            //xcodeExporter.xcodeFrameworks.add ("CoreAudioKit");
 
             if (xcodeExporter.isOSX())
                 xcodeExporter.xcodeFrameworks.add ("AudioUnit");

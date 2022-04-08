@@ -1975,12 +1975,12 @@ public:
                                  " -I \\\"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\\\""
                                  " -I \\\"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\\\"";
 
-            xcodeFrameworks.addArray ({ "AudioUnit", "CoreAudioKit" });
+            xcodeFrameworks.addArray ({ "AudioUnit" });
         }
 
         void addExtraAudioUnitv3PlugInTargetSettings()
         {
-            xcodeFrameworks.addArray ({ "AVFoundation", "CoreAudioKit" });
+            xcodeFrameworks.addArray ({ "AVFoundation" });
 
             if (owner.isOSX())
                 xcodeFrameworks.add ("AudioUnit");
