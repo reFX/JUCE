@@ -730,6 +730,8 @@ public:
 
     ComponentResult RestoreState (CFPropertyListRef inData) override
     {
+        const ScopedValueSetter<bool> scope { restoringState, true };
+
         {
             // Remove the data entry from the state to prevent the superclass loading the parameters
             CFUniquePtr<CFMutableDictionaryRef> copyWithoutData (CFDictionaryCreateMutableCopy (nullptr, 0, (CFDictionaryRef) inData));
@@ -1161,6 +1163,9 @@ public:
 
     void sendAUEvent (const AudioUnitEventType type, const int juceParamIndex)
     {
+        if (restoringState)
+            return;
+
         auEvent.mEventType = type;
         auEvent.mArgument.mParameter.mParameterID = getAUParameterIDForIndex (juceParamIndex);
         AUEventListenerNotify (nullptr, nullptr, &auEvent);
@@ -1196,7 +1201,8 @@ public:
     // this will only ever be called by the bypass parameter
     void parameterValueChanged (int, float) override
     {
-        PropertyChanged (kAudioUnitProperty_BypassEffect, kAudioUnitScope_Global, 0);
+        if (! restoringState)
+            PropertyChanged (kAudioUnitProperty_BypassEffect, kAudioUnitScope_Global, 0);
     }
 
     void parameterGestureChanged (int, bool) override {}
@@ -1805,7 +1811,7 @@ private:
     //==============================================================================
     AudioUnitHelpers::CoreAudioBufferList audioBuffer;
     MidiBuffer midiEvents, incomingEvents;
-    bool prepared = false, isBypassed = false;
+    bool prepared = false, isBypassed = false, restoringState = false;
 
     //==============================================================================
    #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
