@@ -23,6 +23,17 @@
   ==============================================================================
 */
 
+void paintProfileStart ();
+void paintProfileStop ( const juce::Component& );
+
+#if JUCE_DEBUG || NEXUS_DEVELOPMENT
+#define START_PAINT()	{ paintProfileStart ();		}
+#define END_PAINT(x)	{ paintProfileStop ( x );	}
+#else
+#define START_PAINT()
+#define END_PAINT(x)
+#endif
+
 namespace juce
 {
 
@@ -1995,9 +2006,15 @@ void Component::paintWithinParentContext (Graphics& g)
     g.setOrigin (getPosition());
 
     if (cachedImage != nullptr)
+	{
+		START_PAINT ();
         cachedImage->paint (g);
+		END_PAINT ( *this );
+	}
     else
+	{
         paintEntireComponent (g, false);
+	}
 }
 
 void Component::paintComponentAndChildren (Graphics& g)
@@ -2006,10 +2023,9 @@ void Component::paintComponentAndChildren (Graphics& g)
 
     if (flags.dontClipGraphicsFlag && getNumChildComponents() == 0)
     {
+		START_PAINT ();
         paint (g);
-
-        if (onPaint != nullptr)
-            onPaint (g);
+		END_PAINT ( *this );
     }
     else
     {
@@ -2017,10 +2033,9 @@ void Component::paintComponentAndChildren (Graphics& g)
 
         if (! (ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
         {
+			START_PAINT ();
             paint (g);
-
-            if (onPaint != nullptr)
-                onPaint (g);
+			END_PAINT ( *this );
         }
     }
 
@@ -2070,10 +2085,9 @@ void Component::paintComponentAndChildren (Graphics& g)
     }
 
     Graphics::ScopedSaveState ss (g);
+	START_PAINT ();
     paintOverChildren (g);
-
-    if (onPaintOverChildren != nullptr)
-        onPaintOverChildren (g);
+	END_PAINT ( *this );
 }
 
 void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel)

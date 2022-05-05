@@ -1609,11 +1609,6 @@ public:
     */
     virtual void paint (Graphics& g);
 
-    /** Or, you can set onPaint for a component, and it will override the paint() function,
-        so youo can customize painting without hacving to subclass
-     */
-    std::function<void (Graphics&)> onPaint;
-
     /** Components can override this method to draw over the top of their children.
 
         For most drawing operations, it's better to use the normal paint() method,
@@ -1623,11 +1618,6 @@ public:
         @see paint, Graphics
     */
     virtual void paintOverChildren (Graphics& g);
-
-    /** Or, you can set onPaintOverChildren for a component, and it will override the paint() function,
-        so youo can customize painting without hacving to subclass
-     */
-    std::function<void (Graphics&)> onPaintOverChildren;
 
     //==============================================================================
     /** Called when the mouse moves inside a component.
