@@ -24,11 +24,11 @@
 */
 
 #if JUCE_DEBUG || NEXUS_DEVELOPMENT
-void paintProfileStart ();
-void paintProfileStop ( const juce::Component& );
+std::function<void ()> onPaintProfileStart;
+std::function<void ( const juce::Component& )> onPaintProfileStop;
 
-#define START_PAINT()	{ paintProfileStart ();		}
-#define END_PAINT(x)	{ paintProfileStop ( x );	}
+#define START_PAINT()	{ if ( onPaintProfileStart )  onPaintProfileStart ();		}
+#define END_PAINT(x)	{ if ( onPaintProfileStop )   onPaintProfileStop ( x );		}
 #else
 #define START_PAINT()
 #define END_PAINT(x)
