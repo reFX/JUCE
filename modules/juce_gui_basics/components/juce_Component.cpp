@@ -23,10 +23,10 @@
   ==============================================================================
 */
 
+#if JUCE_DEBUG || NEXUS_DEVELOPMENT
 void paintProfileStart ();
 void paintProfileStop ( const juce::Component& );
 
-#if JUCE_DEBUG || NEXUS_DEVELOPMENT
 #define START_PAINT()	{ paintProfileStart ();		}
 #define END_PAINT(x)	{ paintProfileStop ( x );	}
 #else
