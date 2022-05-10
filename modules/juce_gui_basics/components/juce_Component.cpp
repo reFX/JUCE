@@ -23,7 +23,7 @@
   ==============================================================================
 */
 
-#if JUCE_DEBUG || NEXUS_DEVELOPMENT
+#if JUCE_DEBUG || REFX_DEVELOPMENT
 std::function<void ()> onPaintProfileStart;
 std::function<void ( const juce::Component& )> onPaintProfileStop;
 
