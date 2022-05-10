@@ -2136,13 +2136,13 @@ void PopupMenu::showMenuAsync (const Options& options, ModalComponentManager::Ca
 
 void PopupMenu::showMenuAsync (const Options& options, std::function<void (int)> userCallback)
 {
-	auto safeCallback = [ options, userCallback ] (int id)
-	{
-		if (options.hasWatchedComponentBeenDeleted())
-			return;
+    auto safeCallback = [ options, userCallback ] (int id)
+    {
+        if (options.hasWatchedComponentBeenDeleted())
+            return;
 
-		userCallback (id);
-	};
+        userCallback (id);
+    };
 
     showWithOptionalCallback (options, ModalCallbackFunction::create (safeCallback), false);
 }

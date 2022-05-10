@@ -27,8 +27,8 @@
 std::function<void ()> onPaintProfileStart;
 std::function<void ( const juce::Component& )> onPaintProfileStop;
 
-#define START_PAINT()	{ if ( onPaintProfileStart )  onPaintProfileStart ();		}
-#define END_PAINT(x)	{ if ( onPaintProfileStop )   onPaintProfileStop ( x );		}
+#define START_PAINT()   { if ( onPaintProfileStart )  onPaintProfileStart ();       }
+#define END_PAINT(x)    { if ( onPaintProfileStop )   onPaintProfileStop ( x );     }
 #else
 #define START_PAINT()
 #define END_PAINT(x)
@@ -892,10 +892,10 @@ struct StandardCachedComponentImage  : public CachedComponentImage
 
         validArea = compBounds;
 
-		// we prepare a bitmap that should be used "as is". due to scaling and int/float conversions the bitmap might end
-		// up being drawn a bit bigger or a bit smaller than the exact bitmap size. if linear blending is used the bitmap
-		// will wash out on screen, so we force nearest neighbor which is just fine for this case.
-		g.setImageResamplingQuality ( Graphics::lowResamplingQuality );
+        // we prepare a bitmap that should be used "as is". due to scaling and int/float conversions the bitmap might end
+        // up being drawn a bit bigger or a bit smaller than the exact bitmap size. if linear blending is used the bitmap
+        // will wash out on screen, so we force nearest neighbor which is just fine for this case.
+        g.setImageResamplingQuality ( Graphics::lowResamplingQuality );
 
         g.setColour (Colours::black.withAlpha (owner.getAlpha()));
         g.drawImageTransformed (image, AffineTransform::scale (compBoundsF.getWidth()  / imageBoundsF.getWidth(),
@@ -2006,15 +2006,15 @@ void Component::paintWithinParentContext (Graphics& g)
     g.setOrigin (getPosition());
 
     if (cachedImage != nullptr)
-	{
-		START_PAINT ();
+    {
+        START_PAINT ();
         cachedImage->paint (g);
-		END_PAINT ( *this );
-	}
+        END_PAINT ( *this );
+    }
     else
-	{
+    {
         paintEntireComponent (g, false);
-	}
+    }
 }
 
 void Component::paintComponentAndChildren (Graphics& g)
@@ -2023,9 +2023,9 @@ void Component::paintComponentAndChildren (Graphics& g)
 
     if (flags.dontClipGraphicsFlag && getNumChildComponents() == 0)
     {
-		START_PAINT ();
+        START_PAINT ();
         paint (g);
-		END_PAINT ( *this );
+        END_PAINT ( *this );
     }
     else
     {
@@ -2033,9 +2033,9 @@ void Component::paintComponentAndChildren (Graphics& g)
 
         if (! (ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
         {
-			START_PAINT ();
+            START_PAINT ();
             paint (g);
-			END_PAINT ( *this );
+            END_PAINT ( *this );
         }
     }
 
@@ -2085,9 +2085,9 @@ void Component::paintComponentAndChildren (Graphics& g)
     }
 
     Graphics::ScopedSaveState ss (g);
-	START_PAINT ();
+    START_PAINT ();
     paintOverChildren (g);
-	END_PAINT ( *this );
+    END_PAINT ( *this );
 }
 
 void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel)
@@ -3124,8 +3124,8 @@ void JUCE_CALLTYPE Component::unfocusAllComponents()
 //==============================================================================
 bool Component::isEnabled ( bool includeParents ) const noexcept
 {
-	if ( ! includeParents )
-		return ! flags.isDisabledFlag;
+    if ( ! includeParents )
+        return ! flags.isDisabledFlag;
 
     return (! flags.isDisabledFlag)
             && (parentComponent == nullptr || parentComponent->isEnabled());

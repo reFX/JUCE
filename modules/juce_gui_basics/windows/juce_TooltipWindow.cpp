@@ -120,9 +120,9 @@ void TooltipWindow::displayTipInternal (Point<int> screenPos, const String& tip,
             const auto scaledPos = ScalingHelpers::unscaledScreenPosToScaled (*this, physicalPos);
             updatePosition (tip, scaledPos, Desktop::getInstance().getDisplays().getDisplayForPoint (screenPos)->userArea);
 
-			auto    peerFlags = ComponentPeer::windowIsTemporary
-				                | ComponentPeer::windowIgnoresKeyPresses
-				                | ComponentPeer::windowIgnoresMouseClicks;
+            auto    peerFlags = ComponentPeer::windowIsTemporary
+                                | ComponentPeer::windowIgnoresKeyPresses
+                                | ComponentPeer::windowIgnoresMouseClicks;
 
             if ( isOpaque () )
             {

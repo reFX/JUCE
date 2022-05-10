@@ -260,17 +260,17 @@ public:
     */
     virtual void playAlertSound();
 
-	enum class FontWeight : int
-	{
-		regular = 0,
-		bold,
-		light
-	};
+    enum class FontWeight : int
+    {
+        regular = 0,
+        bold,
+        light
+    };
 
-	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
     virtual Font defaultFontWithHeight (float height)   { return defaultFontWithHeight (FontWeight::regular, height); }
 
-	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
     virtual Font defaultFontWithHeight (FontWeight w, float height)   { return defaultFonts[w].withHeight (height); }
 
 
