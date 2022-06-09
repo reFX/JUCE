@@ -2995,6 +2995,11 @@ void Component::takeKeyboardFocus (FocusChangeType cause)
             return;
 
         WeakReference<Component> componentLosingFocus (currentlyFocusedComponent);
+
+        if (auto* losingFocus = componentLosingFocus.get())
+            if (auto* otherPeer = losingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
         currentlyFocusedComponent = this;
 
         Desktop::getInstance().triggerFocusCallback();
@@ -3060,6 +3065,9 @@ void Component::giveAwayKeyboardFocusInternal (bool sendFocusLossEvent)
     {
         if (auto* componentLosingFocus = currentlyFocusedComponent)
         {
+            if (auto* otherPeer = componentLosingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
             currentlyFocusedComponent = nullptr;
 
             if (sendFocusLossEvent && componentLosingFocus != nullptr)
