@@ -994,6 +994,8 @@ public:
     void mouseExit (const MouseEvent&) override;
     /** @internal */
     void mouseEnter (const MouseEvent&) override;
+    /** @internal */
+    bool keyPressed (const KeyPress&) override;
 
     //==============================================================================
    #ifndef DOXYGEN
