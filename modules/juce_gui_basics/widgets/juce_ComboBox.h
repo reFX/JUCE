@@ -340,6 +340,8 @@ public:
     */
     void setScrollWheelEnabled (bool enabled) noexcept;
 
+	/** Returns true if the scroll wheel can move the slider. */
+	bool isScrollWheelEnabled() const noexcept;
 
     //==============================================================================
     /** A set of colour IDs to use to change the colour of various aspects of the combo box.
