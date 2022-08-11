@@ -349,8 +349,8 @@ public:
         if (owner.onValueChange != nullptr)
             owner.onValueChange();
 
-		if (checker.shouldBailOut())
-			return;
+        if (checker.shouldBailOut())
+            return;
 
         if (auto* handler = owner.getAccessibilityHandler())
             handler->notifyAccessibilityEvent (AccessibilityEvent::valueChanged);

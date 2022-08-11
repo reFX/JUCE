@@ -617,7 +617,7 @@ void ComboBox::setScrollWheelEnabled (bool enabled) noexcept
 
 bool ComboBox::isScrollWheelEnabled() const noexcept
 {
-	return scrollWheelEnabled;
+    return scrollWheelEnabled;
 }
 
 //==============================================================================
@@ -635,8 +635,8 @@ void ComboBox::handleAsyncUpdate()
     if (onChange != nullptr)
         onChange();
 
-	if (checker.shouldBailOut())
-		return;
+    if (checker.shouldBailOut())
+        return;
 
     if (auto* handler = getAccessibilityHandler())
         handler->notifyAccessibilityEvent (AccessibilityEvent::valueChanged);

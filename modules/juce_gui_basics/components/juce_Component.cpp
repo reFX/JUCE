@@ -454,18 +454,18 @@ struct Component::ComponentHelpers
         return convertFromDistantParentSpace (topLevelComp, *target, p);
     }
 
-	static bool hierarchyAlphaIsZero ( Component* p )
-	{
-		while ( p != nullptr )
-		{
-			if ( p->componentTransparency != 0 )
-				return false;
+    static bool hierarchyAlphaIsZero ( Component* p )
+    {
+        while ( p != nullptr )
+        {
+            if ( p->componentTransparency != 0 )
+                return false;
 
-			p = p->getParentComponent ();
-		}
+            p = p->getParentComponent ();
+        }
 
-		return true;
-	}
+        return true;
+    }
 
     static bool clipObscuredRegions (const Component& comp, Graphics& g,
                                      const Rectangle<int> clipRect, Point<int> delta)
