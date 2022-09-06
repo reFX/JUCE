@@ -368,14 +368,14 @@ void Graphics::fillRectList (const RectangleList<int>& rects) const
 
 void Graphics::fillAll() const
 {
-    fillRect (context.getClipBounds());
+    fillRect (context.getClipBounds().expanded (1));
 }
 
 void Graphics::fillAll (Colour colourToUse) const
 {
     if (! colourToUse.isTransparent())
     {
-        auto clip = context.getClipBounds();
+        auto clip = context.getClipBounds().expanded (1);
 
         context.saveState();
         context.setFill (colourToUse);
