@@ -43,6 +43,12 @@ struct JUCE_API Base64
     */
     static bool convertFromBase64 (OutputStream& binaryOutput, StringRef base64TextInput);
 
+    /** Converts a base-64 string back to its binary representation.
+        This will write the decoded binary data to a MemoryBlock.
+        If the string is not valid base-64, the method will return an empty memory block.
+    */
+    static MemoryBlock convertFromBase64 (String base64Text);
+
     /** Converts a block of binary data to a base-64 string. */
     static String toBase64 (const void* sourceData, size_t sourceDataSize);
 

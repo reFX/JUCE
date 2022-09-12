@@ -105,6 +105,19 @@ bool Base64::convertFromBase64 (OutputStream& binaryOutput, StringRef base64Text
     return true;
 }
 
+MemoryBlock Base64::convertFromBase64 (String base64Text)
+{
+    MemoryBlock mb;
+
+    {
+        MemoryOutputStream os (mb, true);
+        if (! convertFromBase64 (os, base64Text))
+            return {};
+    }
+
+    return mb;
+}
+
 String Base64::toBase64 (const void* sourceData, size_t sourceDataSize)
 {
     MemoryOutputStream m ((sourceDataSize * 4) / 3 + 3);
