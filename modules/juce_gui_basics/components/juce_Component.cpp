@@ -3267,6 +3267,12 @@ Point<int> Component::getMouseXYRelative() const
     return getLocalPoint (nullptr, Desktop::getMousePosition());
 }
 
+Point<float> Component::getMouseXYRelativeFloat() const
+{
+    return getLocalPoint (nullptr, Desktop::getMousePositionFloat());
+}
+
+
 //==============================================================================
 void Component::addKeyListener (KeyListener* newListener)
 {
