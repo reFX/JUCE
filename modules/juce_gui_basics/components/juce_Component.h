@@ -1967,7 +1967,8 @@ public:
         The return value is relative to the component's top-left corner.
     */
     Point<int> getMouseXYRelative() const;
-
+    Point<float> getMouseXYRelativeFloat() const;
+    
     //==============================================================================
     /** Called when this component's size has been changed.
 

@@ -880,6 +880,11 @@ public:
         }
     }
 
+    void updateDragStart()
+    {
+        mouseDragStartPos = mousePosWhenLastDragged = owner.getMouseXYRelativeFloat();
+    }
+
     void mouseDown (const MouseEvent& e)
     {
         incDecDragged = false;
@@ -1577,6 +1582,9 @@ void Slider::setMouseDragSensitivity (int distanceForFullScaleDrag)
     jassert (distanceForFullScaleDrag > 0);
 
     pimpl->pixelsForFullDragExtent = distanceForFullScaleDrag;
+
+    if (isMouseOverOrDragging (true))
+        pimpl->updateDragStart();
 }
 
 void Slider::setIncDecButtonsMode (IncDecButtonMode mode)                   { pimpl->setIncDecButtonsMode (mode); }
