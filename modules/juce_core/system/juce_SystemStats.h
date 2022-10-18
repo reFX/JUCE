@@ -247,7 +247,6 @@ public:
     */
     static bool isRunningInAppExtensionSandbox() noexcept;
 
-
     //==============================================================================
    #ifndef DOXYGEN
     [[deprecated ("This method was spelt wrong! Please change your code to use getCpuSpeedInMegahertz instead.")]]
