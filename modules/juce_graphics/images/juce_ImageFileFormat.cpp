@@ -28,7 +28,7 @@ namespace juce
 
 struct DefaultImageFormats
 {
-    static ImageFileFormat** get()
+    static std::vector<std::unique_ptr<ImageFileFormat>>& get()
     {
         static DefaultImageFormats formats;
         return formats.formats;
@@ -37,30 +37,30 @@ struct DefaultImageFormats
 private:
     DefaultImageFormats() noexcept
     {
-        formats[0] = &png;
-        formats[1] = &jpg;
-        formats[2] = &gif;
-        formats[3] = nullptr;
+		formats.push_back (std::make_unique<PNGImageFormat>());
+		formats.push_back (std::make_unique<JPEGImageFormat>());
+		formats.push_back (std::make_unique<GIFImageFormat>());
     }
 
-    PNGImageFormat  png;
-    JPEGImageFormat jpg;
-    GIFImageFormat  gif;
-
-    ImageFileFormat* formats[4];
+	std::vector<std::unique_ptr<ImageFileFormat>> formats;
 };
+
+void ImageFileFormat::registerFileFormat (std::unique_ptr<ImageFileFormat> format)
+{
+	DefaultImageFormats::get().push_back (std::move (format));
+}
 
 ImageFileFormat* ImageFileFormat::findImageFormatForStream (InputStream& input)
 {
     const int64 streamPos = input.getPosition();
 
-    for (ImageFileFormat** i = DefaultImageFormats::get(); *i != nullptr; ++i)
+    for (auto& format : DefaultImageFormats::get())
     {
-        const bool found = (*i)->canUnderstand (input);
+        const bool found = format->canUnderstand (input);
         input.setPosition (streamPos);
 
         if (found)
-            return *i;
+            return format.get();
     }
 
     return nullptr;
@@ -68,9 +68,9 @@ ImageFileFormat* ImageFileFormat::findImageFormatForStream (InputStream& input)
 
 ImageFileFormat* ImageFileFormat::findImageFormatForFileExtension (const File& file)
 {
-    for (ImageFileFormat** i = DefaultImageFormats::get(); *i != nullptr; ++i)
-        if ((*i)->usesFileExtension (file))
-            return *i;
+    for (auto& format : DefaultImageFormats::get())
+        if (format->usesFileExtension (file))
+            return format.get();
 
     return nullptr;
 }

@@ -96,6 +96,10 @@ public:
                                      OutputStream& destStream) = 0;
 
     //==============================================================================
+	/** Adds a ImageFormat to the list of known formats
+	*/
+	static void registerFileFormat (std::unique_ptr<ImageFileFormat>);
+
     /** Tries the built-in formats to see if it can find one to read this stream.
         There are currently built-in decoders for PNG, JPEG and GIF formats.
         The object that is returned should not be deleted by the caller.
