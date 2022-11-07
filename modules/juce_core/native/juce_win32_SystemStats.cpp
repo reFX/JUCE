@@ -324,7 +324,7 @@ SystemStats::OperatingSystemType SystemStats::getOperatingSystemType()
     if (major == 5 && minor == 0)      return Win2000;
 
     jassertfalse;
-    return UnknownOS;
+    return Windows;
 }
 
 String SystemStats::getOperatingSystemName()
