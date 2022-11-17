@@ -319,6 +319,7 @@ void Graphics::setFont (const Font& newFont)
 
 void Graphics::setFont (const float newFontHeight)
 {
+	jassertfalse;
     setFont (context.getFont().withHeight (newFontHeight));
 }
 
