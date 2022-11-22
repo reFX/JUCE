@@ -1181,6 +1181,11 @@ public:
                                                   const AudioChannelSet& mainOutputLayout,
                                                   bool idForAudioSuite) const;
 
+    /** If you released a previous version of the AU plugin with a different dictionary
+        key and now you need to support multiple, return all your keys here, otherwise
+        JUCE_STATE_DICTIONARY_KEY will be used */
+    virtual std::vector<std::string> getAUDictionaryKeys()  { return {}; }
+
     //==============================================================================
     /** Some plug-ins support sharing response curve data with the host so that it can
         display this curve on a console or in the mixer panel. For example, ProTools

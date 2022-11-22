@@ -748,29 +748,37 @@ public:
             CFDictionaryRef dict = (CFDictionaryRef) inData;
             CFDataRef data = nullptr;
 
-            CFUniquePtr<CFStringRef> key (CFStringCreateWithCString (kCFAllocatorDefault, JUCE_STATE_DICTIONARY_KEY, kCFStringEncodingUTF8));
+            auto keyNames = juceFilter->getAUDictionaryKeys();
+            if (keyNames.size() == 0)
+                keyNames.push_back (JUCE_STATE_DICTIONARY_KEY);
 
-            bool valuePresent = CFDictionaryGetValueIfPresent (dict, key.get(), (const void**) &data);
-
-            if (valuePresent)
+            for (auto keyName : keyNames)
             {
-                if (data != nullptr)
+                CFUniquePtr<CFStringRef> key (CFStringCreateWithCString (kCFAllocatorDefault, keyName.c_str (), kCFStringEncodingUTF8));
+
+                bool valuePresent = CFDictionaryGetValueIfPresent (dict, key.get(), (const void**) &data);
+
+                if (valuePresent)
                 {
-                    const int numBytes = (int) CFDataGetLength (data);
-                    const juce::uint8* const rawBytes = CFDataGetBytePtr (data);
-
-                    CFRetain (data);
-
-                    if (numBytes > 0)
+                    if (data != nullptr)
                     {
-                       #if JUCE_AU_WRAPPERS_SAVE_PROGRAM_STATES
-                        juceFilter->setCurrentProgramStateInformation (rawBytes, numBytes);
-                       #else
-                        juceFilter->setStateInformation (rawBytes, numBytes);
-                       #endif
-                    }
+                        const int numBytes = (int) CFDataGetLength (data);
+                        const juce::uint8* const rawBytes = CFDataGetBytePtr (data);
 
-                    CFRelease (data);
+                        CFRetain (data);
+
+                        if (numBytes > 0)
+                        {
+                           #if JUCE_AU_WRAPPERS_SAVE_PROGRAM_STATES
+                            juceFilter->setCurrentProgramStateInformation (rawBytes, numBytes);
+                           #else
+                            juceFilter->setStateInformation (rawBytes, numBytes);
+                           #endif
+                        }
+
+                        CFRelease (data);
+                    }
+                    break;
                 }
             }
         }
