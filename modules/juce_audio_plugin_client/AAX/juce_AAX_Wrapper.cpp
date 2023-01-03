@@ -1265,7 +1265,7 @@ namespace AAXClasses
                     if (data != nullptr)
                     {
                         const auto& info = *static_cast<const AAX_TransportStateInfo_V1*> (data);
-                        recordingState.set (info.mIsRecording);
+                        recordingState.set (info.mIsRecording ? true : false);
                     }
                     break;
                #endif
