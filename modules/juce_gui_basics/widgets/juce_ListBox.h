@@ -595,6 +595,8 @@ public:
     /** @internal */
     void startDragAndDrop (const MouseEvent&, const SparseSet<int>& rowsToDrag,
                            const var& dragDescription, bool allowDraggingToOtherWindows);
+    /** @internal */
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
 
     //==============================================================================
    #ifndef DOXYGEN
@@ -624,7 +626,6 @@ private:
 
     void assignModelPtr (ListBoxModel*);
     void checkModelPtrIsValid() const;
-    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     bool hasAccessibleHeaderComponent() const;
     void selectRowInternal (int rowNumber, bool dontScrollToShowThisRow,
                             bool deselectOthersFirst, bool isMouseClick);
