@@ -189,12 +189,22 @@ public:
     {
         renderThread->remove (this);
 
-        if ((state.fetch_and (~StateFlags::initialised) & StateFlags::initialised) != 0)
-        {
-            context.makeActive();
-            shutdownOnThread();
-            OpenGLContext::deactivateCurrentContext();
-        }
+        if ((state.fetch_and (~StateFlags::initialised) & StateFlags::initialised) == 0)
+            return;
+
+        ScopedContextActivator activator;
+        activator.activate (context);
+
+        if (context.renderer != nullptr)
+            context.renderer->openGLContextClosing();
+
+        if (vertexArrayObject != 0)
+            context.extensions.glDeleteVertexArrays (1, &vertexArrayObject);
+
+        associatedObjectNames.clear();
+        associatedObjects.clear();
+        cachedImageFrameBuffer.release();
+        nativeContext->shutdownOnRenderThread();
     }
 
     void resume()
@@ -378,11 +388,11 @@ public:
             abortScope = true;
         }
 
-        if (! contextActivator.activate (context))
-            return RenderStatus::noWork;
-
         {
             NativeContext::Locker locker (*nativeContext);
+
+            if (! contextActivator.activate (context))
+                return RenderStatus::noWork;
 
             JUCE_CHECK_OPENGL_ERROR
 
@@ -419,7 +429,7 @@ public:
             }
         }
 
-        nativeContext->swapBuffers();
+        bufferSwapper.swap();
         return RenderStatus::nominal;
     }
 
@@ -523,9 +533,6 @@ public:
                 paintOwner (*g);
                 JUCE_CHECK_OPENGL_ERROR
             }
-
-            if (! context.isActive())
-                context.makeActive();
         }
 
         JUCE_CHECK_OPENGL_ERROR
@@ -668,20 +675,6 @@ public:
             context.renderer->newOpenGLContextCreated();
 
         return InitResult::success;
-    }
-
-    void shutdownOnThread()
-    {
-        if (context.renderer != nullptr)
-            context.renderer->openGLContextClosing();
-
-        if (vertexArrayObject != 0)
-            context.extensions.glDeleteVertexArrays (1, &vertexArrayObject);
-
-        associatedObjectNames.clear();
-        associatedObjects.clear();
-        cachedImageFrameBuffer.release();
-        nativeContext->shutdownOnRenderThread();
     }
 
     /*  Returns true if the context requires a non-zero vertex array object (VAO) to be bound.
@@ -843,7 +836,6 @@ public:
                     case RenderStatus::nominal: result = RenderStatus::nominal; break;
                     case RenderStatus::messageThreadAborted: return RenderStatus::messageThreadAborted;
                 }
-
             }
 
             return result;
@@ -954,6 +946,49 @@ public:
     }
 
     //==============================================================================
+    class BufferSwapper : private AsyncUpdater
+    {
+    public:
+        explicit BufferSwapper (CachedImage& img)
+            : image (img) {}
+
+        ~BufferSwapper() override
+        {
+            cancelPendingUpdate();
+        }
+
+        void swap()
+        {
+            static const auto swapBuffersOnMainThread = []
+            {
+                const auto os = SystemStats::getOperatingSystemType();
+
+                if ((os & SystemStats::MacOSX) != 0)
+                    return (os != SystemStats::MacOSX && os < SystemStats::MacOSX_10_14);
+
+                return false;
+            }();
+
+            if (swapBuffersOnMainThread && ! MessageManager::getInstance()->isThisTheMessageThread())
+                triggerAsyncUpdate();
+            else
+                image.nativeContext->swapBuffers();
+        }
+
+    private:
+        void handleAsyncUpdate() override
+        {
+            ScopedContextActivator activator;
+            activator.activate (image.context);
+
+            NativeContext::Locker locker (*image.nativeContext);
+            image.nativeContext->swapBuffers();
+        }
+
+        CachedImage& image;
+    };
+
+    //==============================================================================
     friend class NativeContext;
     std::unique_ptr<NativeContext> nativeContext;
 
@@ -980,6 +1015,7 @@ public:
    #endif
     bool textureNpotSupported = false;
     std::chrono::steady_clock::time_point lastMMLockReleaseTime{};
+    BufferSwapper bufferSwapper { *this };
 
    #if JUCE_MAC
     NSView* getCurrentView() const
@@ -1057,9 +1093,6 @@ public:
         paintComponents         = 1 << 1,
         pendingDestruction      = 1 << 2,
         initialised             = 1 << 3,
-
-        // Flags that may change state after each frame
-        transient               = pendingRender | paintComponents,
 
         // Flags that should retain their state after each frame
         persistent              = initialised | pendingDestruction
