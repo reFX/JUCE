@@ -213,7 +213,7 @@ public:
                                                     hidden; if true, it will only be hidden when it
                                                     is moved beyond the edge of the screen
     */
-    void enableUnboundedMouseMovement (bool isEnabled, bool keepCursorVisibleUntilOffscreen = false, bool unboundedMousePositionFixed = false) const;
+    void enableUnboundedMouseMovement (bool isEnabled, bool keepCursorVisibleUntilOffscreen = false) const;
 
     /** Returns true if this source is currently in "unbounded" mode. */
     bool isUnboundedMouseMovementEnabled() const;
