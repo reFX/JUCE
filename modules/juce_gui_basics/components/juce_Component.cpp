@@ -1700,13 +1700,9 @@ void Component::paintComponentAndChildren (Graphics& g)
     {
         Graphics::ScopedSaveState ss (g);
 
-<<<<<<< HEAD
-        if (! (ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
+        if (! (detail::ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
         {
             START_PAINT ();
-=======
-        if (! (detail::ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
->>>>>>> develop
             paint (g);
             END_PAINT ( *this );
         }
@@ -1925,8 +1921,7 @@ Colour Component::findColour (int colourID, bool inheritFromParent) const
 
 bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
 {
-<<<<<<< HEAD
-    if (properties.contains (ComponentHelpers::getColourPropertyID (colourID)))
+    if (properties.contains (detail::ComponentHelpers::getColourPropertyID (colourID)))
         return true;
 
     if (inheritFromParent && parentComponent != nullptr
@@ -1934,9 +1929,6 @@ bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
         return parentComponent->isColourSpecified (colourID, true);
 
     return getLookAndFeel().isColourSpecified (colourID);
-=======
-    return properties.contains (detail::ComponentHelpers::getColourPropertyID (colourID));
->>>>>>> develop
 }
 
 void Component::removeColour (int colourID)
