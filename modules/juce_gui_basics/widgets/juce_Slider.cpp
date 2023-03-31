@@ -1654,7 +1654,7 @@ void Slider::setPopupDisplayParent (Component* parent)
 Component* Slider::getCurrentPopupDisplay() const noexcept      { return pimpl->popupDisplay.get(); }
 
 //==============================================================================
-void Slider::colourChanged()        { repaint(); }
+void Slider::colourChanged()        { lookAndFeelChanged(); }
 void Slider::lookAndFeelChanged()   { pimpl->lookAndFeelChanged (getLookAndFeel()); }
 void Slider::enablementChanged()    { repaint(); pimpl->updateTextBoxEnablement(); }
 
