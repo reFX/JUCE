@@ -262,9 +262,10 @@ public:
 
     enum class FontWeight : int
     {
-        regular = 0,
-        bold,
-        light
+        regular = 400,
+        medium = 500,
+        semibold = 600,
+        bold = 700,
     };
 
     /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
@@ -277,7 +278,7 @@ public:
 protected:
     //==============================================================================
     /** Default font for drawing. This is a reFX addition, so JUCE Components won't use this */
-    std::map<FontWeight, Font> defaultFonts;
+    std::unordered_map<FontWeight, Font> defaultFonts;
 
 private:
     //==============================================================================
