@@ -296,7 +296,7 @@ namespace CoreTextTypeLayout
 
                 auto extraKerning = attr.font.getExtraKerningFactor();
 
-                if (extraKerning != 0)
+                if (! approximatelyEqual (extraKerning, 0.0f))
                 {
                     extraKerning *= attr.font.getHeight();
 

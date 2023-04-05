@@ -27,7 +27,7 @@
  extern bool repaintDebuggingActive;
 #endif
 #if JUCE_MAC
- #include <juce_gui_basics/native/juce_mac_PerScreenDisplayLinks.h>
+ #include <juce_gui_basics/native/juce_PerScreenDisplayLinks_mac.h>
 #endif
 
 namespace juce
@@ -1065,7 +1065,7 @@ public:
 
         const auto newRefreshPeriod = sharedDisplayLinks->getNominalVideoRefreshPeriodSForScreen (display);
 
-        if (newRefreshPeriod != 0.0 && std::exchange (refreshPeriod, newRefreshPeriod) != newRefreshPeriod)
+        if (newRefreshPeriod != 0.0 && ! approximatelyEqual (std::exchange (refreshPeriod, newRefreshPeriod), newRefreshPeriod))
             nativeContext->setNominalVideoRefreshPeriodS (newRefreshPeriod);
 
         updateColourSpace();
