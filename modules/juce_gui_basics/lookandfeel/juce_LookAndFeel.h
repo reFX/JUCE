@@ -262,6 +262,7 @@ public:
 
     enum class FontWeight : int
     {
+		light = 300,
         regular = 400,
         medium = 500,
         semibold = 600,
