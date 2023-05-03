@@ -175,8 +175,8 @@ struct Grid::Helpers
                         if (! currentItem.isFractional())
                             return roundingFunction (absoluteSize);
 
-                        const auto result = roundingFunction (absoluteSize + carriedError);
-                        carriedError = result - absoluteSize;
+                        const auto result = roundingFunction (absoluteSize - carriedError);
+                        carriedError += result - absoluteSize;
                         return result;
                     }();
 
@@ -1145,8 +1145,7 @@ void Grid::performLayout (Rectangle<int> targetArea)
                          sizeCalculation.roundingFunction (rect.getHeight()) };
             };
 
-            return rounded (Helpers::BoxAlignment::alignItem (*item, *this, areaBounds))
-                       + targetArea.toFloat().getPosition();
+            return rounded (Helpers::BoxAlignment::alignItem (*item, *this, areaBounds));
         };
 
         item->currentBounds = getBounds (calculation) + targetArea.toFloat().getPosition();
