@@ -57,15 +57,23 @@ endif()
 add_library(juce_recommended_config_flags INTERFACE)
 add_library(juce::juce_recommended_config_flags ALIAS juce_recommended_config_flags)
 
+get_cmake_property (debug_configs DEBUG_CONFIGURATIONS)
+
+if(NOT debug_configs)
+  set (debug_configs Debug)
+endif()
+
+list (JOIN debug_configs "," debug_configs)
+
 if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
     target_compile_options(juce_recommended_config_flags INTERFACE
-        $<IF:$<CONFIG:Debug>,/Od /Zi,/Ox> $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">:/MP> /EHsc)
+        $<IF:$<CONFIG:${debug_configs}>,/Od /Zi,/Ox> $<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">:/MP> /EHsc)
 elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
        OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
        OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
     target_compile_options(juce_recommended_config_flags INTERFACE
-        $<$<CONFIG:Debug>:-g -O0>
-        $<$<CONFIG:Release>:-O3>)
+        $<$<CONFIG:${debug_configs}>:-g -O0>
+        $<$<NOT:$<CONFIG:${debug_configs}>>:-O3>)
 endif()
 
 # ==================================================================================================
@@ -75,12 +83,12 @@ add_library(juce::juce_recommended_lto_flags ALIAS juce_recommended_lto_flags)
 
 if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
     target_compile_options(juce_recommended_lto_flags INTERFACE
-        $<$<CONFIG:Release>:$<IF:$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">,-GL,-flto>>)
+        $<$<NOT:$<CONFIG:${debug_configs}>>:$<IF:$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">,-GL,-flto>>)
     target_link_libraries(juce_recommended_lto_flags INTERFACE
-        $<$<CONFIG:Release>:$<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">:-LTCG>>)
+        $<$<NOT:$<CONFIG:${debug_configs}>>:$<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","MSVC">:-LTCG>>)
 elseif((NOT MINGW) AND ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
                      OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
                      OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")))
-    target_compile_options(juce_recommended_lto_flags INTERFACE $<$<CONFIG:Release>:-flto>)
-    target_link_libraries(juce_recommended_lto_flags INTERFACE $<$<CONFIG:Release>:-flto>)
+    target_compile_options(juce_recommended_lto_flags INTERFACE $<$<NOT:$<CONFIG:${debug_configs}>>:-flto>)
+    target_link_libraries(juce_recommended_lto_flags INTERFACE $<$<NOT:$<CONFIG:${debug_configs}>>:-flto>)
 endif()
