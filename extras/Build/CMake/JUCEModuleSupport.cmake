@@ -73,9 +73,13 @@ endfunction()
 # ==================================================================================================
 
 function(_juce_add_standard_defs juce_target)
+    if (NOT JUCE_DEBUG_CONFIGS)
+        set (JUCE_DEBUG_CONFIGS Debug)
+    endif ()
+
     target_compile_definitions(${juce_target} INTERFACE
         JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-        $<IF:$<CONFIG:DEBUG>,DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
+        $<IF:$<CONFIG:${JUCE_DEBUG_CONFIGS}>,DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
         $<$<PLATFORM_ID:Android>:JUCE_ANDROID=1>)
 endfunction()
 
