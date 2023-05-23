@@ -3974,6 +3974,8 @@ public:
 
     tresult PLUGIN_API getCompatibilityJSON (IBStream* stream) override
     {
+		ScopedJuceInitialiser_GUI libraryInitialiser;
+		
         auto filter = createPluginFilterOfType (AudioProcessor::WrapperType::wrapperType_VST3);
         auto* extensions = dynamic_cast<const VST3ClientExtensions*> (filter.get());
 
