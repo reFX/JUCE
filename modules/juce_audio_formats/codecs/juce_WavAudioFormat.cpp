@@ -1458,6 +1458,21 @@ public:
                     input->readIntoMemoryBlock (tracktion, (ssize_t) length);
                     dict[WavAudioFormat::tracktionLoopInfo] = tracktion.toString();
                 }
+				else if (chunkType == chunkName ("clm "))
+				{
+					MemoryBlock xfer;
+					input->readIntoMemoryBlock (xfer, (ssize_t) length);
+
+					auto str = xfer.toString();
+					if (str.startsWith ("<!>"))
+					{
+						str = str.substring (3);
+
+						dict["xferSamplesPerFrame"] = str.upToFirstOccurrenceOf (" ", false, false);
+						dict["xferInterpolation"] 	= str.fromFirstOccurrenceOf (" ", false, false).substring (0, 1);
+						dict["xferFactory"] 		= str.fromFirstOccurrenceOf (" ", false, false).substring (1, 2);
+					}
+				}
                 else if (chunkEnd <= input->getPosition())
                 {
                     break;
