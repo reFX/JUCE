@@ -4750,13 +4750,6 @@ bool KeyPress::isKeyCurrentlyDown (const int keyCode)
     return HWNDComponentPeer::isKeyDown (k);
 }
 
-// (This internal function is used by the plugin client module)
-namespace detail
-{
-bool offerKeyMessageToJUCEWindow (MSG& m);
-bool offerKeyMessageToJUCEWindow (MSG& m)   { return HWNDComponentPeer::offerKeyMessageToJUCEWindow (m); }
-} // namespace detail
-
 //==============================================================================
 static DWORD getProcess (HWND hwnd)
 {
