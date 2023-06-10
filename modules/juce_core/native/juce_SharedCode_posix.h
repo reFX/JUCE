@@ -891,7 +891,7 @@ class PosixThreadAttribute
 public:
     explicit PosixThreadAttribute (size_t stackSize)
     {
-        if (valid)
+        if (valid && stackSize != 0)
             pthread_attr_setstacksize (&attr, stackSize);
     }
 
@@ -1000,7 +1000,9 @@ static void* makeThreadHandle (PosixThreadAttribute& attr, Thread* userData, voi
 {
     pthread_t handle = {};
 
-    if (pthread_create (&handle, attr.get(), threadEntryProc, userData) != 0)
+    const auto status = pthread_create (&handle, attr.get(), threadEntryProc, userData);
+
+    if (status != 0)
         return nullptr;
 
     pthread_detach (handle);

@@ -23,17 +23,24 @@
   ==============================================================================
 */
 
-namespace juce
+#if JUCE_WINDOWS
+
+namespace juce::detail
 {
 
-pointer_sized_int VSTCallbackHandler::handleVstPluginCanDo ([[maybe_unused]] int32 index,
-                                                            [[maybe_unused]] pointer_sized_int value,
-                                                            [[maybe_unused]] void* ptr,
-                                                            [[maybe_unused]] float opt)
+class WindowsHooks
 {
-    return 0;
-}
+public:
+    WindowsHooks() = default;
 
-void VSTCallbackHandler::handleVstHostCallbackAvailable ([[maybe_unused]] std::function<VstHostCallbackType>&& callback) {}
+private:
+    class Hooks;
 
-} // namespace juce
+    static std::shared_ptr<Hooks> getSingleton();
+
+    std::shared_ptr<Hooks> hooks = getSingleton();
+};
+
+} // namespace juce::detail
+
+#endif

@@ -446,11 +446,11 @@ void AudioProcessor::validateParameter (AudioProcessorParameter* param)
 void AudioProcessor::checkForDuplicateTrimmedParamID ([[maybe_unused]] AudioProcessorParameter* param)
 {
    #if JUCE_DEBUG && ! JUCE_DISABLE_CAUTIOUS_PARAMETER_ID_CHECKING
-    if (auto* withID = dynamic_cast<AudioProcessorParameterWithID*> (param))
+    if (auto* withID = dynamic_cast<HostedAudioProcessorParameter*> (param))
     {
         constexpr auto maximumSafeAAXParameterIdLength = 31;
 
-        const auto paramID = withID->paramID;
+        const auto paramID = withID->getParameterID();
 
         // If you hit this assertion, a parameter name is too long to be supported
         // by the AAX plugin format.
@@ -478,9 +478,9 @@ void AudioProcessor::checkForDuplicateTrimmedParamID ([[maybe_unused]] AudioProc
 void AudioProcessor::checkForDuplicateParamID ([[maybe_unused]] AudioProcessorParameter* param)
 {
    #if JUCE_DEBUG
-    if (auto* withID = dynamic_cast<AudioProcessorParameterWithID*> (param))
+    if (auto* withID = dynamic_cast<HostedAudioProcessorParameter*> (param))
     {
-        auto insertResult = paramIDs.insert (withID->paramID);
+        auto insertResult = paramIDs.insert (withID->getParameterID());
 
         // If you hit this assertion then the parameter ID is not unique
         jassert (insertResult.second);
@@ -1188,71 +1188,6 @@ AudioProcessor::BusesProperties AudioProcessor::BusesProperties::withOutput (con
 }
 
 //==============================================================================
-int32 AudioProcessor::getAAXPluginIDForMainBusConfig (const AudioChannelSet& mainInputLayout,
-                                                      const AudioChannelSet& mainOutputLayout,
-                                                      const bool idForAudioSuite) const
-{
-    int uniqueFormatId = 0;
-
-    for (int dir = 0; dir < 2; ++dir)
-    {
-        const bool isInput = (dir == 0);
-        auto& set = (isInput ? mainInputLayout : mainOutputLayout);
-        int aaxFormatIndex = 0;
-
-        const AudioChannelSet sets[]
-        {
-            AudioChannelSet::disabled(),
-            AudioChannelSet::mono(),
-            AudioChannelSet::stereo(),
-            AudioChannelSet::createLCR(),
-            AudioChannelSet::createLCRS(),
-            AudioChannelSet::quadraphonic(),
-            AudioChannelSet::create5point0(),
-            AudioChannelSet::create5point1(),
-            AudioChannelSet::create6point0(),
-            AudioChannelSet::create6point1(),
-            AudioChannelSet::create7point0(),
-            AudioChannelSet::create7point1(),
-            AudioChannelSet::create7point0SDDS(),
-            AudioChannelSet::create7point1SDDS(),
-            AudioChannelSet::create7point0point2(),
-            AudioChannelSet::create7point1point2(),
-            AudioChannelSet::ambisonic (1),
-            AudioChannelSet::ambisonic (2),
-            AudioChannelSet::ambisonic (3),
-            AudioChannelSet::create5point0point2(),
-            AudioChannelSet::create5point1point2(),
-            AudioChannelSet::create5point0point4(),
-            AudioChannelSet::create5point1point4(),
-            AudioChannelSet::create7point0point4(),
-            AudioChannelSet::create7point1point4(),
-            AudioChannelSet::create7point0point6(),
-            AudioChannelSet::create7point1point6(),
-            AudioChannelSet::create9point0point4(),
-            AudioChannelSet::create9point1point4(),
-            AudioChannelSet::create9point0point6(),
-            AudioChannelSet::create9point1point6(),
-            AudioChannelSet::ambisonic (4),
-            AudioChannelSet::ambisonic (5),
-            AudioChannelSet::ambisonic (6),
-            AudioChannelSet::ambisonic (7)
-        };
-
-        const auto index = (int) std::distance (std::begin (sets), std::find (std::begin (sets), std::end (sets), set));
-
-        if (index != numElementsInArray (sets))
-            aaxFormatIndex = index;
-        else
-            jassertfalse;
-
-        uniqueFormatId = (uniqueFormatId << 8) | aaxFormatIndex;
-    }
-
-    return (idForAudioSuite ? 0x6a796161 /* 'jyaa' */ : 0x6a636161 /* 'jcaa' */) + uniqueFormatId;
-}
-
-//==============================================================================
 const char* AudioProcessor::getWrapperTypeDescription (AudioProcessor::WrapperType type) noexcept
 {
     switch (type)
@@ -1268,6 +1203,63 @@ const char* AudioProcessor::getWrapperTypeDescription (AudioProcessor::WrapperTy
         case AudioProcessor::wrapperType_LV2:           return "LV2";
         default:                                        jassertfalse; return {};
     }
+}
+
+//==============================================================================
+VST2ClientExtensions* AudioProcessor::getVST2ClientExtensions()
+{
+    if (auto* extensions = dynamic_cast<VST2ClientExtensions*> (this))
+    {
+        //  To silence this jassert there are two options:
+        //
+        //  1. - Override AudioProcessor::getVST2ClientExtensions() and
+        //       return the "this" pointer.
+        //
+        //     - This option has the advantage of being quick and easy,
+        //       and avoids the above dynamic_cast.
+        //
+        //  2. - Create a new object that inherits from VST2ClientExtensions.
+        //
+        //     - Port your existing functionality from the AudioProcessor
+        //       to the new object.
+        //
+        //     - Return a pointer to the object in AudioProcessor::getVST2ClientExtensions().
+        //
+        //     - This option has the advantage of allowing you to break
+        //       up your AudioProcessor into smaller composable objects.
+        jassertfalse;
+        return extensions;
+    }
+
+    return nullptr;
+}
+
+VST3ClientExtensions* AudioProcessor::getVST3ClientExtensions()
+{
+    if (auto* extensions = dynamic_cast<VST3ClientExtensions*> (this))
+    {
+        //  To silence this jassert there are two options:
+        //
+        //  1. - Override AudioProcessor::getVST3ClientExtensions() and
+        //       return the "this" pointer.
+        //
+        //     - This option has the advantage of being quick and easy,
+        //       and avoids the above dynamic_cast.
+        //
+        //  2. - Create a new object that inherits from VST3ClientExtensions.
+        //
+        //     - Port your existing functionality from the AudioProcessor
+        //       to the new object.
+        //
+        //     - Return a pointer to the object in AudioProcessor::getVST3ClientExtensions().
+        //
+        //     - This option has the advantage of allowing you to break
+        //       up your AudioProcessor into smaller composable objects.
+        jassertfalse;
+        return extensions;
+    }
+
+    return nullptr;
 }
 
 //==============================================================================
@@ -1434,8 +1426,8 @@ const String AudioProcessor::getParameterName (int index)
 String AudioProcessor::getParameterID (int index)
 {
     // Don't use getParamChecked here, as this must also work for legacy plug-ins
-    if (auto* p = dynamic_cast<AudioProcessorParameterWithID*> (getParameters()[index]))
-        return p->paramID;
+    if (auto* p = dynamic_cast<HostedAudioProcessorParameter*> (getParameters()[index]))
+        return p->getParameterID();
 
     return String (index);
 }

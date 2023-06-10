@@ -369,8 +369,6 @@ void Project::initialiseAudioPluginValues()
     pluginVSTNumMidiOutputsValue.referTo     (projectRoot, Ids::pluginVSTNumMidiOutputs,    getUndoManager(), 16);
 
     pluginLV2URIValue.referTo                (projectRoot, Ids::lv2Uri,                     getUndoManager(), getDefaultLV2URI());
-
-    vst3ManifestEnabledValue.referTo         (projectRoot, Ids::vst3ManifestEnabled,        getUndoManager(), false);
 }
 
 void Project::updateOldStyleConfigList()
@@ -908,6 +906,25 @@ void Project::updateModuleWarnings()
     updateModuleNotFoundWarning (moduleNotFound);
 }
 
+void Project::updateExporterWarnings()
+{
+    const Identifier deprecatedExporters[] = { "CODEBLOCKS_WINDOWS", "CODEBLOCKS_LINUX" };
+
+    for (const auto exporter : getExporters())
+    {
+        for (const auto& name : deprecatedExporters)
+        {
+            if (exporter.getType() == name)
+            {
+                addProjectMessage (ProjectMessages::Ids::deprecatedExporter, {});
+                return;
+            }
+        }
+    }
+
+    removeProjectMessage (ProjectMessages::Ids::deprecatedExporter);
+}
+
 void Project::updateCppStandardWarning (bool showWarning)
 {
     if (showWarning)
@@ -1141,24 +1158,24 @@ void Project::valueTreePropertyChanged (ValueTree& tree, const Identifier& prope
     changed();
 }
 
-void Project::valueTreeChildAdded (ValueTree& parent, ValueTree& child)
+void Project::valueTreeChildAddedOrRemoved (ValueTree& parent, ValueTree& child)
 {
-    ignoreUnused (parent);
-
     if (child.getType() == Ids::MODULE)
         updateModuleWarnings();
+    else if (parent.getType() == Ids::EXPORTFORMATS)
+        updateExporterWarnings();
 
     changed();
 }
 
-void Project::valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int index)
+void Project::valueTreeChildAdded (ValueTree& parent, ValueTree& child)
 {
-    ignoreUnused (parent, index);
+    valueTreeChildAddedOrRemoved (parent, child);
+}
 
-    if (child.getType() == Ids::MODULE)
-        updateModuleWarnings();
-
-    changed();
+void Project::valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int)
+{
+    valueTreeChildAddedOrRemoved (parent, child);
 }
 
 void Project::valueTreeChildOrderChanged (ValueTree&, int, int)
@@ -1265,7 +1282,7 @@ bool Project::shouldBuildTargetType (build_tools::ProjectType::Target::Type targ
         case Target::VST3PlugIn:
             return shouldBuildVST3();
         case Target::VST3Helper:
-            return shouldBuildVST3() && isVst3ManifestEnabled();
+            return shouldBuildVST3();
         case Target::AAXPlugIn:
             return shouldBuildAAX();
         case Target::AudioUnitPlugIn:
@@ -1540,14 +1557,6 @@ void Project::createAudioPluginPropertyEditors (PropertyListBuilder& props)
                    "VST3 category. Most hosts require either \"Fx\" or \"Instrument\" to be selected in order for the plugin to be recognised. "
                    "If neither of these are selected, the appropriate one will be automatically added based on the \"Plugin is a synth\" option.");
     }
-
-    props.add (new ChoicePropertyComponent (vst3ManifestEnabledValue, "Plugin VST3 moduleinfo.json Enabled"),
-               "Check this box if you want a moduleinfo.json file to be generated as part of the VST3 build. "
-               "This may improve startup/scanning time for hosts that understand the contents of this file. "
-               "This setting is disabled by default because the moduleinfo.json path can cause problems during code signing on macOS. "
-               "Bundles containing a moduleinfo.json may be rejected by code signing verification at any point in the future without notice per https://developer.apple.com/library/archive/technotes/tn2206."
-               "If you enable this setting, be aware that the code signature for the moduleinfo.json will be stored in its extended file attributes. "
-               "Therefore, you will need to ensure that these attributes are not changed or removed when distributing the VST3.");
 
     props.add (new MultiChoicePropertyComponent (pluginAAXCategoryValue, "Plugin AAX Category", getAllAAXCategoryStrings(), getAllAAXCategoryVars()),
                "AAX category.");

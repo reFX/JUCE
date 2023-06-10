@@ -47,9 +47,9 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
 #include <juce_audio_plugin_client/detail/juce_CheckSettingMacros.h>
 #include <juce_audio_plugin_client/detail/juce_IncludeSystemHeaders.h>
 #include <juce_audio_plugin_client/detail/juce_PluginUtilities.h>
-#include <juce_audio_plugin_client/detail/juce_WindowsHooks.h>
 #include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
 #include <juce_audio_plugin_client/detail/juce_VSTWindowUtilities.h>
+#include <juce_gui_basics/native/juce_WindowsHooks_windows.h>
 
 #include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
 #include <juce_audio_processors/utilities/juce_FlagCache.h>
@@ -371,7 +371,7 @@ static QueryInterfaceResult queryAdditionalInterfaces (AudioProcessor* processor
 
     void* obj = nullptr;
 
-    if (auto* extensions = dynamic_cast<VST3ClientExtensions*> (processor))
+    if (auto* extensions = processor->getVST3ClientExtensions())
     {
         const auto result = (extensions->*member) (targetIID, &obj);
         return { result, obj };
@@ -1543,7 +1543,7 @@ private:
     {
         audioProcessor = newAudioProcessor;
 
-        if (auto* extensions = dynamic_cast<VST3ClientExtensions*> (audioProcessor->get()))
+        if (auto* extensions = audioProcessor->get()->getVST3ClientExtensions())
         {
             extensions->setIComponentHandler (componentHandler);
             extensions->setIHostApplication (hostContext.get());
@@ -3102,7 +3102,7 @@ public:
                     {
                         if (isFirstBus)
                         {
-                            if (auto* extensions = dynamic_cast<VST3ClientExtensions*> (pluginInstance))
+                            if (auto* extensions = pluginInstance->getVST3ClientExtensions())
                                 return extensions->getPluginHasMainInput() ? Vst::kMain : Vst::kAux;
 
                             return Vst::kMain;
@@ -3974,8 +3974,10 @@ public:
 
     tresult PLUGIN_API getCompatibilityJSON (IBStream* stream) override
     {
+        const ScopedJuceInitialiser_GUI libraryInitialiser;
+
         auto filter = createPluginFilterOfType (AudioProcessor::WrapperType::wrapperType_VST3);
-        auto* extensions = dynamic_cast<const VST3ClientExtensions*> (filter.get());
+        auto* extensions = filter->getVST3ClientExtensions();
 
         if (extensions == nullptr || extensions->getCompatibleClasses().empty())
             return kResultFalse;

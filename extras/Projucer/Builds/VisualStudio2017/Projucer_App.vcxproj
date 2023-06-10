@@ -374,6 +374,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_core\misc\juce_ConsoleApplication.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\misc\juce_EnumHelpers_test.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\misc\juce_Result.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -387,6 +390,9 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_CommonFile_linux.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_FileDescriptor_linux.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_Files_android.cpp">
@@ -417,6 +423,15 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_Network_windows.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_PlatformTimer_generic.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_PlatformTimer_linux.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_PlatformTimer_windows.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\native\juce_Registry_windows.cpp">
@@ -660,6 +675,9 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_events\broadcasters\juce_ChangeBroadcaster.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_events\broadcasters\juce_LockingAsyncUpdater.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_events\interprocess\juce_ConnectedChildProcess.cpp">
@@ -1157,6 +1175,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_gui_basics\keyboard\juce_ModifierKeys.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_gui_basics\layout\juce_BorderedComponentBoundsConstrainer.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_gui_basics\layout\juce_ComponentAnimator.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -1335,6 +1356,18 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_Windowing_windows.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_WindowsHooks_windows.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_WindowUtils_android.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_WindowUtils_linux.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_WindowUtils_windows.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_gui_basics\native\juce_XSymbols_linux.cpp">
@@ -1804,6 +1837,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_core\memory\juce_Singleton.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\memory\juce_WeakReference.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_ConsoleApplication.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_EnumHelpers.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_Functional.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_Result.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_RuntimePermissions.h"/>
@@ -1812,9 +1846,11 @@
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_BasicNativeHeaders.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_CFHelpers_mac.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_ComSmartPtr_windows.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_HighResolutionTimerThread.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_IPAddress_posix.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_JNIHelpers_android.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_ObjCHelpers_mac.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_PlatformTimerListener.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_SharedCode_intel.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_SharedCode_posix.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\native\juce_ThreadPriorities_native.h"/>
@@ -1915,6 +1951,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_events\broadcasters\juce_AsyncUpdater.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_events\broadcasters\juce_ChangeBroadcaster.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_events\broadcasters\juce_ChangeListener.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_events\broadcasters\juce_LockingAsyncUpdater.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_events\interprocess\juce_ConnectedChildProcess.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_events\interprocess\juce_InterprocessConnection.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_events\interprocess\juce_InterprocessConnectionServer.h"/>
@@ -2080,6 +2117,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\keyboard\juce_TextInputTarget.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_AnimatedPosition.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_AnimatedPositionBehaviours.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_BorderedComponentBoundsConstrainer.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_ComponentAnimator.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_ComponentBoundsConstrainer.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\layout\juce_ComponentBuilder.h"/>
@@ -2153,6 +2191,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_ScopedDPIAwarenessDisabler.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_ScopedThreadDPIAwarenessSetter_windows.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_ScopedWindowAssociation_linux.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_WindowsHooks_windows.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_XSymbols_linux.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\native\juce_XWindowSystem_linux.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\positioning\juce_MarkerList.h"/>
@@ -2197,6 +2236,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\windows\juce_TooltipWindow.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\windows\juce_TopLevelWindow.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\windows\juce_VBlankAttachement.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_gui_basics\windows\juce_WindowUtils.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_basics\juce_gui_basics.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_extra\code_editor\juce_CodeDocument.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_gui_extra\code_editor\juce_CodeEditorComponent.h"/>

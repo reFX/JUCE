@@ -2336,18 +2336,43 @@ public:
 
     static bool offerKeyMessageToJUCEWindow (MSG& m)
     {
-        if (m.message == WM_KEYDOWN || m.message == WM_KEYUP)
-        {
-            if (Component::getCurrentlyFocusedComponent() != nullptr)
-            {
-                if (auto* peer = getOwnerOfWindow (m.hwnd))
-                {
-                    ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { m.hwnd };
+        auto* peer = getOwnerOfWindow (m.hwnd);
 
-                    return m.message == WM_KEYDOWN ? peer->doKeyDown (m.wParam)
-                                                   : peer->doKeyUp (m.wParam);
-                }
-            }
+        if (peer == nullptr)
+            return false;
+
+        auto* focused = Component::getCurrentlyFocusedComponent();
+
+        if (focused == nullptr || focused->getPeer() != peer)
+            return false;
+
+        constexpr UINT keyMessages[] { WM_KEYDOWN,
+                                       WM_KEYUP,
+                                       WM_SYSKEYDOWN,
+                                       WM_SYSKEYUP,
+                                       WM_CHAR };
+
+        const auto messageTypeMatches = [&] (UINT msg) { return m.message == msg; };
+
+        if (std::none_of (std::begin (keyMessages), std::end (keyMessages), messageTypeMatches))
+            return false;
+
+        ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { m.hwnd };
+
+        if (m.message == WM_CHAR)
+            return peer->doKeyChar ((int) m.wParam, m.lParam);
+
+        TranslateMessage (&m);
+
+        switch (m.message)
+        {
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+                return peer->doKeyDown (m.wParam);
+
+            case WM_KEYUP:
+            case WM_SYSKEYUP:
+                return peer->doKeyUp (m.wParam);
         }
 
         return false;
@@ -4122,6 +4147,21 @@ private:
 
             //==============================================================================
             case WM_SETFOCUS:
+                /*  When the HWND receives Focus from the system it sends a
+                    UIA_AutomationFocusChangedEventId notification redirecting the focus to the HWND
+                    itself. This is a built-in behaviour of the HWND.
+
+                    This means that whichever JUCE managed provider was active before the entire
+                    window lost and then regained the focus, loses its focused state, and the
+                    window's root element will become focused under which all JUCE managed providers
+                    can be found.
+
+                    This needs to be reflected on currentlyFocusedHandler so that the JUCE
+                    accessibility mechanisms can detect that the root window got the focus, and send
+                    another FocusChanged event to the system to redirect focus to a JUCE managed
+                    provider if necessary.
+                */
+                AccessibilityHandler::clearCurrentlyFocusedHandler();
                 updateKeyModifiers();
                 handleFocusGain();
                 break;
@@ -4724,13 +4764,6 @@ bool KeyPress::isKeyCurrentlyDown (const int keyCode)
 
     return HWNDComponentPeer::isKeyDown (k);
 }
-
-// (This internal function is used by the plugin client module)
-namespace detail
-{
-bool offerKeyMessageToJUCEWindow (MSG& m);
-bool offerKeyMessageToJUCEWindow (MSG& m)   { return HWNDComponentPeer::offerKeyMessageToJUCEWindow (m); }
-} // namespace detail
 
 //==============================================================================
 static DWORD getProcess (HWND hwnd)

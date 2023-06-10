@@ -73,10 +73,20 @@ endfunction()
 # ==================================================================================================
 
 function(_juce_add_standard_defs juce_target)
-    target_compile_definitions(${juce_target} INTERFACE
-        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-        $<IF:$<CONFIG:DEBUG>,DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
-        $<$<PLATFORM_ID:Android>:JUCE_ANDROID=1>)
+
+  get_cmake_property (debug_configs DEBUG_CONFIGURATIONS)
+
+  if(NOT debug_configs)
+    set (debug_configs Debug)
+  endif()
+
+  list (JOIN debug_configs "," debug_configs)
+
+  target_compile_definitions ("${juce_target}" INTERFACE
+    JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+    $<IF:$<CONFIG:${debug_configs}>,DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
+    $<$<PLATFORM_ID:Android>:JUCE_ANDROID=1>)
+
 endfunction()
 
 # ==================================================================================================
@@ -445,7 +455,10 @@ function(juce_add_module module_path)
     _juce_module_sources("${module_path}" "${base_path}" globbed_sources headers)
 
     if(${module_name} STREQUAL "juce_audio_plugin_client")
-        list(REMOVE_ITEM headers "${module_path}/LV2/juce_LV2TurtleDumpProgram.cpp")
+        list(REMOVE_ITEM headers
+            "${module_path}/LV2/juce_LV2ManifestHelper.cpp"
+            "${module_path}/VST3/juce_VST3ManifestHelper.mm"
+            "${module_path}/VST3/juce_VST3ManifestHelper.cpp")
 
         _juce_get_platform_plugin_kinds(plugin_kinds)
 
