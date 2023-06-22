@@ -182,6 +182,19 @@ struct ComponentHelpers
         return convertFromDistantParentSpace (topLevelComp, *target, p);
     }
 
+    static bool hierarchyAlphaIsZero ( Component* p )
+    {
+        while ( p != nullptr )
+        {
+            if ( p->componentTransparency != 0 )
+                return false;
+
+            p = p->getParentComponent ();
+        }
+
+        return true;
+    }
+
     static bool clipObscuredRegions (const Component& comp, Graphics& g,
                                      const Rectangle<int> clipRect, Point<int> delta)
     {
@@ -197,7 +210,7 @@ struct ComponentHelpers
 
                 if (! newClip.isEmpty())
                 {
-                    if (child.isOpaque() && child.componentTransparency == 0)
+                    if (child.isOpaque() && hierarchyAlphaIsZero (&child))
                     {
                         g.excludeClipRegion (newClip + delta);
                         wasClipped = true;
