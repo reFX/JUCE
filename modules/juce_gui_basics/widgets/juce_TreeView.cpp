@@ -729,6 +729,8 @@ public:
 
         structureChanged = true;
         triggerAsyncUpdate();
+
+        owner.treeWasScrolled();
     }
 
     bool keyPressed (const KeyPress& key) override

@@ -803,6 +803,13 @@ public:
     /** Returns the TreeView's Viewport object. */
     Viewport* getViewport() const noexcept;
 
+    /** Override this to be informed when the tree is scrolled.
+
+        This might be caused by the user moving the scrollbar, or by programmatic changes
+        to the list position.
+    */
+    virtual void treeWasScrolled() {}
+
     /** Returns the number of pixels by which each nested level of the tree is indented.
 
         @see setIndentSize
