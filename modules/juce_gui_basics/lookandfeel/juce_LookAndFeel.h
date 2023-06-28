@@ -262,21 +262,21 @@ public:
 
     enum class FontWeight : int
     {
-		light = 300,
+        light = 300,
         regular = 400,
         medium = 500,
         semibold = 600,
         bold = 700,
     };
 
-	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
-	virtual Font defaultFontWithHeight (FontWeight w, float height) { return defaultFonts[w].withHeight(height); }
+    /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    virtual Font defaultFontWithHeight (FontWeight w, float height) { return defaultFonts[w].withHeight(height); }
 
     /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
     virtual Font defaultFontWithHeight (float height)   { return defaultFontWithHeight(FontWeight::regular, height); }
 
-	/** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
-	virtual Font defaultFontWithHeight (int w, float height) { return defaultFontWithHeight (FontWeight(w), height); }
+    /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
+    virtual Font defaultFontWithHeight (int w, float height) { return defaultFontWithHeight (FontWeight(w), height); }
 
 protected:
     //==============================================================================
