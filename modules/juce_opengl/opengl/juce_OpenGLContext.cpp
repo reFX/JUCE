@@ -198,9 +198,6 @@ public:
         if (context.renderer != nullptr)
             context.renderer->openGLContextClosing();
 
-        if (vertexArrayObject != 0)
-            context.extensions.glDeleteVertexArrays (1, &vertexArrayObject);
-
         associatedObjectNames.clear();
         associatedObjects.clear();
         cachedImageFrameBuffer.release();
@@ -403,6 +400,8 @@ public:
 
             if (context.renderer != nullptr)
             {
+                OpenGLRendering::SavedBinding<OpenGLRendering::TraitsVAO> vaoBinding;
+
                 glViewport (0, 0, viewportArea.getWidth(), viewportArea.getHeight());
                 context.currentRenderScale = currentAreaAndScale.scale;
                 context.renderer->renderOpenGL();
@@ -958,7 +957,6 @@ public:
     RectangleList<int> validArea;
     Rectangle<int> lastScreenBounds;
     AffineTransform transform;
-    GLuint vertexArrayObject = 0;
     LockedAreaAndScale areaAndScale;
 
     StringArray associatedObjectNames;
