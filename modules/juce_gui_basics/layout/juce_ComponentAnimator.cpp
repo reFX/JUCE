@@ -222,8 +222,8 @@ ComponentAnimator::~ComponentAnimator() {}
 ComponentAnimator::AnimationTask* ComponentAnimator::findTaskFor (Component* const component) const noexcept
 {
     for (int i = tasks.size(); --i >= 0;)
-        if (component == tasks.getUnchecked(i)->component.get())
-            return tasks.getUnchecked(i);
+        if (component == tasks.getUnchecked (i)->component.get())
+            return tasks.getUnchecked (i);
 
     return nullptr;
 }
@@ -288,7 +288,7 @@ void ComponentAnimator::cancelAllAnimations (const bool moveComponentsToTheirFin
     {
         if (moveComponentsToTheirFinalPositions)
             for (int i = tasks.size(); --i >= 0;)
-                tasks.getUnchecked(i)->moveToFinalDestination();
+                tasks.getUnchecked (i)->moveToFinalDestination();
 
         tasks.clear();
         sendChangeMessage();

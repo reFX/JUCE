@@ -28,7 +28,7 @@ namespace juce
 
 ComboBox::ComboBox (const String& name)
     : Component (name),
-      noChoicesMessage (TRANS("(no choices)"))
+      noChoicesMessage (TRANS ("(no choices)"))
 {
     setRepaintsOnMouseActivity (true);
     lookAndFeelChanged();
@@ -630,8 +630,7 @@ void ComboBox::handleAsyncUpdate()
     if (checker.shouldBailOut())
         return;
 
-    if (onChange != nullptr)
-        onChange();
+    NullCheckedInvocation::invoke (onChange);
 
     if (checker.shouldBailOut())
         return;
