@@ -1420,8 +1420,8 @@ public:
     std::unique_ptr<Button> incButton, decButton;
 
     //==============================================================================
-    struct PopupDisplayComponent  : public BubbleComponent,
-                                    public Timer
+    struct PopupDisplayComponent final : public BubbleComponent,
+                                         public Timer
     {
         PopupDisplayComponent (Slider& s, bool isOnDesktop)
             : owner (s),
@@ -1835,7 +1835,7 @@ void Slider::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel
 }
 
 //==============================================================================
-class SliderAccessibilityHandler  : public AccessibilityHandler
+class SliderAccessibilityHandler final : public AccessibilityHandler
 {
 public:
     explicit SliderAccessibilityHandler (Slider& sliderToWrap)
@@ -1850,7 +1850,7 @@ public:
     String getHelp() const override   { return slider.getTooltip(); }
 
 private:
-    class ValueInterface  : public AccessibilityValueInterface
+    class ValueInterface final : public AccessibilityValueInterface
     {
     public:
         explicit ValueInterface (Slider& sliderToWrap)

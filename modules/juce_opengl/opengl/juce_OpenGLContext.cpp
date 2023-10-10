@@ -44,7 +44,7 @@ extern Array<AppInactivityCallback*> appBecomingInactiveCallbacks;
 
 // On iOS, all GL calls will crash when the app is running in the background, so
 // this prevents them from happening (which some messy locking behaviour)
-struct iOSBackgroundProcessCheck  : public AppInactivityCallback
+struct iOSBackgroundProcessCheck final : public AppInactivityCallback
 {
     iOSBackgroundProcessCheck()              { isBackgroundProcess(); appBecomingInactiveCallbacks.add (this); }
     ~iOSBackgroundProcessCheck() override    { appBecomingInactiveCallbacks.removeAllInstancesOf (this); }
@@ -95,7 +95,7 @@ static bool contextHasTextureNpotFeature()
 }
 
 //==============================================================================
-class OpenGLContext::CachedImage  : public CachedComponentImage
+class OpenGLContext::CachedImage final : public CachedComponentImage
 {
     template <typename T, typename U>
     static constexpr bool isFlagSet (const T& t, const U& u) { return (t & u) != 0; }
@@ -662,7 +662,7 @@ public:
     }
 
     //==============================================================================
-    struct BlockingWorker  : public OpenGLContext::AsyncWorker
+    struct BlockingWorker final : public OpenGLContext::AsyncWorker
     {
         BlockingWorker (OpenGLContext::AsyncWorker::Ptr && workerToUse)
             : originalWorker (std::move (workerToUse))
@@ -902,7 +902,7 @@ public:
     }
 
     //==============================================================================
-    class BufferSwapper : private AsyncUpdater
+    class BufferSwapper final : private AsyncUpdater
     {
     public:
         explicit BufferSwapper (CachedImage& img)
@@ -1064,8 +1064,8 @@ public:
 };
 
 //==============================================================================
-class OpenGLContext::Attachment  : public ComponentMovementWatcher,
-                                   private Timer
+class OpenGLContext::Attachment final : public ComponentMovementWatcher,
+                                        private Timer
 {
 public:
     Attachment (OpenGLContext& c, Component& comp)
@@ -1523,7 +1523,7 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
     {
         OpenGLRendering::SavedBinding<OpenGLRendering::TraitsVAO> vaoBinding;
 
-        struct OverlayShaderProgram  : public ReferenceCountedObject
+        struct OverlayShaderProgram final : public ReferenceCountedObject
         {
             OverlayShaderProgram (OpenGLContext& context)
                 : program (context), params (program)
@@ -1544,7 +1544,7 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
                 return *program;
             }
 
-            struct BuiltProgram : public OpenGLShaderProgram
+            struct BuiltProgram final : public OpenGLShaderProgram
             {
                 explicit BuiltProgram (OpenGLContext& ctx)
                     : OpenGLShaderProgram (ctx)

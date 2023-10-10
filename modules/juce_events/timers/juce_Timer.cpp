@@ -23,9 +23,9 @@
 namespace juce
 {
 
-class Timer::TimerThread  : private Thread,
-                            private DeletedAtShutdown,
-                            private AsyncUpdater
+class Timer::TimerThread final : private Thread,
+                                 private DeletedAtShutdown,
+                                 private AsyncUpdater
 {
 public:
     using LockType = CriticalSection; // (mysteriously, using a SpinLock here causes problems on some XP machines..)
@@ -181,7 +181,7 @@ private:
 
     WaitableEvent callbackArrived;
 
-    struct CallTimersMessage  : public MessageManager::MessageBase
+    struct CallTimersMessage final : public MessageManager::MessageBase
     {
         CallTimersMessage() {}
 
@@ -381,7 +381,7 @@ void JUCE_CALLTYPE Timer::callPendingTimersSynchronously()
         TimerThread::instance->callTimersSynchronously();
 }
 
-struct LambdaInvoker  : private Timer
+struct LambdaInvoker final : private Timer
 {
     LambdaInvoker (int milliseconds, std::function<void()> f)  : function (f)
     {

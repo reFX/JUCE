@@ -507,7 +507,7 @@ bool Component::isOpaque() const noexcept
 }
 
 //==============================================================================
-struct StandardCachedComponentImage  : public CachedComponentImage
+struct StandardCachedComponentImage final : public CachedComponentImage
 {
     StandardCachedComponentImage (Component& c) noexcept : owner (c)  {}
 

@@ -147,7 +147,7 @@ public:
     }
 
     //==============================================================================
-    struct ProxyComponent  : public Component
+    struct ProxyComponent final : public Component
     {
         ProxyComponent (Component& c)
         {

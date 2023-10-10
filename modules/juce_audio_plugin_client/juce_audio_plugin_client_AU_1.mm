@@ -104,10 +104,10 @@ struct AudioProcessorHolder
 };
 
 //==============================================================================
-class JuceAU   : public AudioProcessorHolder,
-                 public ausdk::MusicDeviceBase,
-                 public AudioProcessorListener,
-                 public AudioProcessorParameter::Listener
+class JuceAU final : public AudioProcessorHolder,
+                     public ausdk::MusicDeviceBase,
+                     public AudioProcessorListener,
+                     public AudioProcessorParameter::Listener
 {
 public:
     JuceAU (AudioUnit component)
@@ -1164,7 +1164,7 @@ public:
         return rate > 0 ? juceFilter->getLatencySamples() / rate : 0;
     }
 
-    class ScopedPlayHead : private AudioPlayHead
+    class ScopedPlayHead final : private AudioPlayHead
     {
     public:
         explicit ScopedPlayHead (JuceAU& juceAudioUnit)
@@ -1606,7 +1606,7 @@ public:
     }
 
     //==============================================================================
-    class EditorCompHolder  : public Component
+    class EditorCompHolder final : public Component
     {
     public:
         EditorCompHolder (AudioProcessorEditor* const editor)
@@ -1752,7 +1752,7 @@ public:
     }
 
     //==============================================================================
-    struct JuceUIViewClass  : public ObjCClass<NSView>
+    struct JuceUIViewClass final : public ObjCClass<NSView>
     {
         JuceUIViewClass()  : ObjCClass<NSView> ("JUCEAUView_")
         {
@@ -1843,7 +1843,7 @@ public:
     };
 
     //==============================================================================
-    struct JuceUICreationClass  : public ObjCClass<NSObject>
+    struct JuceUICreationClass final : public ObjCClass<NSObject>
     {
         JuceUICreationClass()  : ObjCClass<NSObject> ("JUCE_AUCocoaViewClass_")
         {
