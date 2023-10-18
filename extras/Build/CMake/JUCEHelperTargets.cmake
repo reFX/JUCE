@@ -143,4 +143,8 @@ elseif((NOT MINGW) AND ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
                      OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")))
     target_compile_options(juce_recommended_lto_flags INTERFACE $<$<NOT:$<CONFIG:${debug_configs}>>:-flto>)
     target_link_libraries(juce_recommended_lto_flags INTERFACE $<$<NOT:$<CONFIG:${debug_configs}>>:-flto>)
+
+    # Xcode 15.0 requires this flag to avoid a compiler bug
+    target_link_libraries(juce_recommended_lto_flags INTERFACE
+        $<$<NOT:$<CONFIG:${debug_configs}>>:$<$<STREQUAL:"${CMAKE_CXX_COMPILER_ID}","AppleClang">:-Wl,-weak_reference_mismatches,weak>>)
 endif()
