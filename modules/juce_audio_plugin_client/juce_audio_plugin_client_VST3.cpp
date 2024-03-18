@@ -59,7 +59,7 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
  #define JUCE_VST3_CAN_REPLACE_VST2 1
 #endif
 
-#if JUCE_VST3_CAN_REPLACE_VST2
+#if __has_include ("pluginterfaces/vst2.x/vstfxstore.h")
 
  #if ! JUCE_MSVC && ! defined (__cdecl)
   #define __cdecl
@@ -2728,7 +2728,6 @@ public:
     }
 
     //==============================================================================
-   #if JUCE_VST3_CAN_REPLACE_VST2
     bool loadVST2VstWBlock (const char* data, int size)
     {
         jassert (ByteOrder::bigEndianInt ("VstW") == htonl ((uint32) readUnaligned<int32> (data)));
@@ -2815,14 +2814,25 @@ public:
 
         return false;
     }
-   #endif
+
+    bool vst3CanReplaveVst2()
+    {
+       #if JUCE_VST3_CAN_REPLACE_VST2
+        return true;
+       #else
+        if (auto ext = pluginInstance->getVST3ClientExtensions())
+            return ext->getCompatibleClasses().size() > 0;
+
+        return false;
+       #endif
+    }
 
     void loadStateData (const void* data, int size)
     {
-       #if JUCE_VST3_CAN_REPLACE_VST2
-        if (loadVST2CompatibleState ((const char*) data, size))
-            return;
-       #endif
+       if (vst3CanReplaveVst2())
+           if (loadVST2CompatibleState ((const char*) data, size))
+               return;
+
         setStateInformation (data, size);
     }
 
