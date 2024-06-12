@@ -450,7 +450,7 @@ public:
     }
 
     //==============================================================================
-    void enableUnboundedMouseMovement (bool enable, bool keepCursorVisibleUntilOffscreen)
+    void enableUnboundedMouseMovement (bool enable, bool keepCursorVisibleUntilOffscreen, bool fixed = false)
     {
         enable = enable && isDragging();
         isCursorVisibleUntilOffscreen = keepCursorVisibleUntilOffscreen;
@@ -467,6 +467,8 @@ public:
 
             isUnboundedMouseModeOn = enable;
             unboundedMouseOffset = {};
+            unboundedMousePositionFixed = fixed;
+            mouseDownPos = getRawScreenPosition();
 
             revealCursor (true);
         }
@@ -478,7 +480,13 @@ public:
                                                                            .reduced (2, 2)
                                                                            .toFloat());
 
-        if (! componentScreenBounds.contains (lastPointerState.position))
+
+        if (unboundedMousePositionFixed)
+        {
+            unboundedMouseOffset += (lastPointerState.position - ScalingHelpers::unscaledScreenPosToScaled (mouseDownPos));
+            setScreenPosition (ScalingHelpers::unscaledScreenPosToScaled (mouseDownPos));
+        }
+        else if (! componentScreenBounds.contains (lastPointerState.position))
         {
             auto componentCentre = current.getScreenBounds().toFloat().getCentre();
             unboundedMouseOffset += (lastPointerState.position - SH::scaledScreenPosToUnscaled (componentCentre));
@@ -496,7 +504,7 @@ public:
     //==============================================================================
     void showMouseCursor (MouseCursor cursor, bool forcedUpdate)
     {
-        if (isUnboundedMouseModeOn && ((! unboundedMouseOffset.isOrigin()) || ! isCursorVisibleUntilOffscreen))
+        if (isUnboundedMouseModeOn && ! unboundedMousePositionFixed && ((! unboundedMouseOffset.isOrigin()) || ! isCursorVisibleUntilOffscreen))
         {
             cursor = MouseCursor::NoCursor;
             forcedUpdate = true;
@@ -527,11 +535,11 @@ public:
     //==============================================================================
     const int index;
     const MouseInputSource::InputSourceType inputType;
-    Point<float> unboundedMouseOffset; // NB: these are unscaled coords
+    Point<float> unboundedMouseOffset, mouseDownPos; // NB: these are unscaled coords
     detail::PointerState lastPointerState;
     ModifierKeys buttonState;
 
-    bool isUnboundedMouseModeOn = false, isCursorVisibleUntilOffscreen = false;
+    bool isUnboundedMouseModeOn = false, isCursorVisibleUntilOffscreen = false, unboundedMousePositionFixed = true;
 
 private:
     WeakReference<Component> componentUnderMouse, lastNonInertialWheelTarget;

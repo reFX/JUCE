@@ -35,6 +35,7 @@
 namespace juce
 {
 
+#if 0
 //==============================================================================
 class API_AVAILABLE (macos (10.11)) BluetoothMidiPairingWindowClass final : public ObjCClass<NSObject>
 {
@@ -161,16 +162,20 @@ private:
     JUCE_DECLARE_WEAK_REFERENCEABLE (BluetoothMidiSelectorWindowHelper)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BluetoothMidiSelectorWindowHelper)
 };
+#endif
 
 //==============================================================================
 bool BluetoothMidiDevicePairingDialogue::open (ModalComponentManager::Callback* exitCallback,
                                                Rectangle<int>* bounds)
 {
+    ignoreUnused (bounds);
+#if 0
     if (@available (macOS 10.11, *))
     {
         new BluetoothMidiSelectorWindowHelper (exitCallback, bounds);
         return true;
     }
+#endif
 
     std::unique_ptr<ModalComponentManager::Callback> cb (exitCallback);
     // This functionality is unavailable when targetting OSX < 10.11. Instead,
@@ -182,8 +187,10 @@ bool BluetoothMidiDevicePairingDialogue::open (ModalComponentManager::Callback* 
 
 bool BluetoothMidiDevicePairingDialogue::isAvailable()
 {
+#if 0
     if (@available (macOS 10.11, *))
         return true;
+#endif
 
     return false;
 }

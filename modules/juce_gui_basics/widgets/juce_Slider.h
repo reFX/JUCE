@@ -162,7 +162,8 @@ public:
     {
         notDragging,            /**< Dragging is not active.  */
         absoluteDrag,           /**< The dragging corresponds directly to the value that is displayed.  */
-        velocityDrag            /**< The dragging value change is relative to the velocity of the mouse movement.  */
+        velocityDrag,           /**< The dragging value change is relative to the velocity of the mouse movement.  */
+        deltaDrag,              /**< The dragging corresponds to the delta from the last mouse position */
     };
 
     //==============================================================================
@@ -698,6 +699,8 @@ public:
                                  bool shouldShowOnMouseHover,
                                  Component* parentComponentToUse,
                                  int hoverTimeout = 2000);
+
+    void setPopupDisplayParent (Component* parent);
 
     /** If a popup display is enabled and is currently visible, this returns the component
         that is being shown, or nullptr if none is currently in use.

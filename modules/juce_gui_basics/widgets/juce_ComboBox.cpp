@@ -622,6 +622,11 @@ void ComboBox::setScrollWheelEnabled (bool enabled) noexcept
     scrollWheelEnabled = enabled;
 }
 
+bool ComboBox::isScrollWheelEnabled() const noexcept
+{
+    return scrollWheelEnabled;
+}
+
 //==============================================================================
 void ComboBox::addListener    (ComboBox::Listener* l)    { listeners.add (l); }
 void ComboBox::removeListener (ComboBox::Listener* l)    { listeners.remove (l); }

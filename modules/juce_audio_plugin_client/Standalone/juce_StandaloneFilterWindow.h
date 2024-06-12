@@ -359,7 +359,7 @@ public:
     //==============================================================================
     void savePluginState()
     {
-        if (settings != nullptr && processor != nullptr)
+        if (settings != nullptr && settings->getBoolValue ("autoLoadSave", true) && processor != nullptr)
         {
             MemoryBlock data;
             processor->getStateInformation (data);
@@ -370,7 +370,7 @@ public:
 
     void reloadPluginState()
     {
-        if (settings != nullptr)
+        if (settings != nullptr && settings->getBoolValue ("autoLoadSave", true))
         {
             MemoryBlock data;
 
@@ -848,24 +848,6 @@ public:
         JUCEApplicationBase::quit();
     }
 
-    void handleMenuResult (int result)
-    {
-        switch (result)
-        {
-            case 1:  pluginHolder->showAudioSettingsDialog(); break;
-            case 2:  pluginHolder->askUserToSaveState(); break;
-            case 3:  pluginHolder->askUserToLoadState(); break;
-            case 4:  resetToDefaultState(); break;
-            default: break;
-        }
-    }
-
-    static void menuCallback (int result, StandaloneFilterWindow* button)
-    {
-        if (button != nullptr && result != 0)
-            button->handleMenuResult (result);
-    }
-
     void resized() override
     {
         DocumentWindow::resized();
@@ -894,15 +876,23 @@ private:
     void buttonClicked (Button*) override
     {
         PopupMenu m;
-        m.addItem (1, TRANS ("Audio/MIDI Settings..."));
-        m.addSeparator();
-        m.addItem (2, TRANS ("Save current state..."));
-        m.addItem (3, TRANS ("Load a saved state..."));
-        m.addSeparator();
-        m.addItem (4, TRANS ("Reset to default state"));
 
-        m.showMenuAsync (PopupMenu::Options(),
-                         ModalCallbackFunction::forComponent (menuCallback, this));
+        m.addItem (TRANS("Audio/MIDI Settings..."), [this] { pluginHolder->showAudioSettingsDialog(); });
+        m.addSeparator();
+        m.addItem (TRANS("Save current state..."), [this] { pluginHolder->askUserToSaveState(); });
+        m.addItem (TRANS("Load a saved state..."), [this] { pluginHolder->askUserToLoadState(); });
+
+
+        if (auto settings = pluginHolder->settings.get())
+        {
+            bool autoLoadSave = settings->getBoolValue ("autoLoadSave", true);
+            m.addItem (TRANS("Automtically load and save state"), true, autoLoadSave, [settings, autoLoadSave] { settings->setValue ("autoLoadSave", ! autoLoadSave); });
+        }
+
+        m.addSeparator();
+        m.addItem (TRANS("Reset to default state"), [this] { resetToDefaultState(); });
+
+        m.showMenuAsync (PopupMenu::Options());
     }
 
     //==============================================================================

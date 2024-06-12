@@ -59,6 +59,9 @@ RangedDirectoryIterator::RangedDirectoryIterator (const File& directory,
                                        whatToLookFor,
                                        followSymlinks))
 {
+    // reFX: Following symbolic links can lead to deadlocks. Don't do it.
+    jassert ( ! isRecursive || ( followSymlinks == File::FollowSymlinks::no || followSymlinks == File::FollowSymlinks::noCycles ) );
+
     entry.iterator = iterator;
     increment();
 }

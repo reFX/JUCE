@@ -93,6 +93,10 @@ public:
     */
     virtual Image decodeImage (InputStream& input) = 0;
 
+    /** Adds a ImageFormat to the list of known formats
+    */
+    static void registerFileFormat (std::unique_ptr<ImageFileFormat>);
+
     //==============================================================================
     /** Attempts to write an image to a stream.
 

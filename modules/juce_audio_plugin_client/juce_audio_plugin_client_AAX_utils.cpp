@@ -61,6 +61,7 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations",
                                      "-Wdeprecated",
                                      "-Wlanguage-extension-token",
                                      "-Wmicrosoft-enum-value",
+                                     "-Wduplicate-enum",
                                      "-Wmisleading-indentation",
                                      "-Wregister")
 JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6001 6053 4996 5033 4068 4996 5272)

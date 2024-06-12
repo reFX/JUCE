@@ -103,6 +103,10 @@ public:
     */
     static String getOperatingSystemName();
 
+   #ifdef JUCE_WINDOWS
+    static String getWinVersionString ();
+   #endif
+
     /** Returns true if the OS is 64-bit, or false for a 32-bit OS. */
     static bool isOperatingSystem64Bit();
 

@@ -226,6 +226,9 @@ void Viewport::recreateScrollbars()
     verticalScrollBar  .reset (createScrollBarComponent (true));
     horizontalScrollBar.reset (createScrollBarComponent (false));
 
+    verticalScrollBar  ->setViewportIgnoreDragFlag (true);
+    horizontalScrollBar->setViewportIgnoreDragFlag (true);
+
     addChildComponent (verticalScrollBar.get());
     addChildComponent (horizontalScrollBar.get());
 

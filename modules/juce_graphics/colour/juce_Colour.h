@@ -325,6 +325,11 @@ public:
     */
     [[nodiscard]] Colour withBrightness (float newBrightness) const noexcept;
 
+    /** Returns a copy of this colour with a different brightness.
+        @see brighter, darker, withMultipliedBrightness
+    */
+    Colour withPerceivedBrightness (float brightness) const noexcept;
+
     /** Returns a copy of this colour with a different lightness.
         @see lighter, darker, withMultipliedLightness
     */

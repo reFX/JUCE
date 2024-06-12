@@ -32,6 +32,17 @@
   ==============================================================================
 */
 
+#if JUCE_DEBUG || REFX_DEVELOPMENT
+std::function<void ()> onPaintProfileStart;
+std::function<void ( const juce::Component& )> onPaintProfileStop;
+
+#define START_PAINT()   { if ( onPaintProfileStart )  onPaintProfileStart ();       }
+#define END_PAINT(x)    { if ( onPaintProfileStop )   onPaintProfileStop ( x );     }
+#else
+#define START_PAINT()
+#define END_PAINT(x)
+#endif
+
 #define JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED_OR_OFFSCREEN \
     jassert ((MessageManager::getInstanceWithoutCreating() != nullptr \
                && MessageManager::getInstanceWithoutCreating()->currentThreadHasLockedMessageManager()) \
@@ -1605,9 +1616,15 @@ void Component::paintWithinParentContext (Graphics& g)
     g.setOrigin (getPosition());
 
     if (cachedImage != nullptr)
+    {
+        START_PAINT ();
         cachedImage->paint (g);
+        END_PAINT ( *this );
+    }
     else
+    {
         paintEntireComponent (g, false);
+    }
 }
 
 void Component::paintComponentAndChildren (Graphics& g)
@@ -1630,14 +1647,20 @@ void Component::paintComponentAndChildren (Graphics& g)
 
     if (flags.dontClipGraphicsFlag && getNumChildComponents() == 0)
     {
+        START_PAINT ();
         paint (g);
+        END_PAINT ( *this );
     }
     else
     {
         Graphics::ScopedSaveState ss (g);
 
         if (! (detail::ComponentHelpers::clipObscuredRegions (*this, g, clipBounds, {}) && g.isClipEmpty()))
+        {
+            START_PAINT ();
             paint (g);
+            END_PAINT ( *this );
+        }
     }
 
     for (int i = 0; i < childComponentList.size(); ++i)
@@ -1686,7 +1709,9 @@ void Component::paintComponentAndChildren (Graphics& g)
     }
 
     Graphics::ScopedSaveState ss (g);
+    START_PAINT ();
     paintOverChildren (g);
+    END_PAINT ( *this );
 }
 
 class Component::EffectState
@@ -1904,9 +1929,16 @@ Colour Component::findColour (int colourID, bool inheritFromParent) const
     return getLookAndFeel().findColour (colourID);
 }
 
-bool Component::isColourSpecified (int colourID) const
+bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
 {
-    return properties.contains (detail::ComponentHelpers::getColourPropertyID (colourID));
+    if (properties.contains (detail::ComponentHelpers::getColourPropertyID (colourID)))
+        return true;
+
+    if (inheritFromParent && parentComponent != nullptr
+        && (lookAndFeel == nullptr || ! lookAndFeel->isColourSpecified (colourID)))
+        return parentComponent->isColourSpecified (colourID, true);
+
+    return getLookAndFeel().isColourSpecified (colourID);
 }
 
 void Component::removeColour (int colourID)
@@ -2780,8 +2812,11 @@ void JUCE_CALLTYPE Component::unfocusAllComponents()
 }
 
 //==============================================================================
-bool Component::isEnabled() const noexcept
+bool Component::isEnabled ( bool includeParents ) const noexcept
 {
+    if ( ! includeParents )
+        return ! flags.isDisabledFlag;
+
     return (! flags.isDisabledFlag)
             && (parentComponent == nullptr || parentComponent->isEnabled());
 }
@@ -2889,6 +2924,11 @@ bool JUCE_CALLTYPE Component::isMouseButtonDownAnywhere() noexcept
 Point<int> Component::getMouseXYRelative() const
 {
     return getLocalPoint (nullptr, Desktop::getMousePositionFloat()).roundToInt();
+}
+
+Point<float> Component::getMouseXYRelativeFloat() const
+{
+    return getLocalPoint (nullptr, Desktop::getMousePositionFloat());
 }
 
 //==============================================================================

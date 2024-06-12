@@ -1222,6 +1222,11 @@ public:
     */
     virtual VST3ClientExtensions* getVST3ClientExtensions();
 
+    /** If you released a previous version of the AU plugin with a different dictionary
+        key and now you need to support multiple, return all your keys here, otherwise
+        JUCE_STATE_DICTIONARY_KEY will be used */
+    virtual std::vector<std::string> getAUDictionaryKeys()  { return {}; }
+
     //==============================================================================
     /** Some plug-ins support sharing response curve data with the host so that it can
         display this curve on a console or in the mixer panel. For example, ProTools
@@ -1302,6 +1307,9 @@ public:
         The default implementation of this callback will do nothing.
     */
     virtual void updateTrackProperties (const TrackProperties& properties);
+
+    /** Gets the name of a MIDI note, if available */
+    virtual bool hasNameForMidiNoteNumber (int note, int midiChannel, juce::String& name);
 
     //==============================================================================
     /** Helper function that just converts an xml element into a binary blob.

@@ -683,6 +683,8 @@ public:
     */
     static URL createWithoutParsing (const String& url);
 
+    void createHeadersAndPostData (String&, MemoryBlock&, bool) const;
+
     //==============================================================================
    #ifndef DOXYGEN
     using OpenStreamProgressCallback = bool (void* context, int bytesSent, int totalBytes);
@@ -740,7 +742,6 @@ private:
     void init();
     void addParameter (const String&, const String&);
     bool hasBodyDataToSend() const;
-    void createHeadersAndPostData (String&, MemoryBlock&, bool) const;
     URL withUpload (Upload*) const;
 
     static ParameterHandling toHandling (bool);

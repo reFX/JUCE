@@ -48,7 +48,9 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
  #define JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY 1
 #endif
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wformat-non-iso", "-Wduplicate-enum")
 #include <juce_audio_processors/format_types/juce_VST3Headers.h>
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #undef JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY
 #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
@@ -68,7 +70,7 @@ JUCE_BEGIN_NO_SANITIZE ("vptr")
  #define JUCE_VST3_CAN_REPLACE_VST2 1
 #endif
 
-#if JUCE_VST3_CAN_REPLACE_VST2
+#if __has_include ("pluginterfaces/vst2.x/vstfxstore.h")
 
  #if ! JUCE_MSVC && ! defined (__cdecl)
   #define __cdecl
@@ -506,9 +508,29 @@ public:
         return kResultFalse;
     }
 
+    tresult PLUGIN_API hasProgramPitchNames (Vst::ProgramListID, Steinberg::int32) override
+    {
+        String name;
+        for (int i = 0; i < 127; i++)
+            if (audioProcessor->hasNameForMidiNoteNumber (i, 1, name) == kResultTrue)
+                return kResultTrue;
+
+        return kResultFalse;
+    }
+
+    tresult PLUGIN_API getProgramPitchName (Vst::ProgramListID, Steinberg::int32, Steinberg::int16 midiNote, Vst::String128 name) override
+    {
+        String nameOut;
+        if (audioProcessor->hasNameForMidiNoteNumber (midiNote, 1, nameOut))
+        {
+            toString128 (name, nameOut);
+            return kResultTrue;
+        }
+
+        return kResultFalse;
+    }
+
     tresult PLUGIN_API getProgramInfo (Vst::ProgramListID, Steinberg::int32, Vst::CString, Vst::String128) override             { return kNotImplemented; }
-    tresult PLUGIN_API hasProgramPitchNames (Vst::ProgramListID, Steinberg::int32) override                                     { return kNotImplemented; }
-    tresult PLUGIN_API getProgramPitchName (Vst::ProgramListID, Steinberg::int32, Steinberg::int16, Vst::String128) override    { return kNotImplemented; }
     tresult PLUGIN_API selectUnit (Vst::UnitID) override                                                                        { return kNotImplemented; }
     tresult PLUGIN_API setUnitProgramData (Steinberg::int32, Steinberg::int32, IBStream*) override                              { return kNotImplemented; }
     Vst::UnitID PLUGIN_API getSelectedUnit() override                                                                           { return Vst::kRootUnitId; }
@@ -2766,7 +2788,6 @@ public:
     }
 
     //==============================================================================
-   #if JUCE_VST3_CAN_REPLACE_VST2
     bool loadVST2VstWBlock (const char* data, int size)
     {
         jassert (ByteOrder::bigEndianInt ("VstW") == htonl ((uint32) readUnaligned<int32> (data)));
@@ -2853,14 +2874,25 @@ public:
 
         return false;
     }
-   #endif
+
+    bool vst3CanReplaveVst2()
+    {
+       #if JUCE_VST3_CAN_REPLACE_VST2
+        return true;
+       #else
+        if (auto ext = pluginInstance->getVST3ClientExtensions())
+            return ext->getCompatibleClasses().size() > 0;
+
+        return false;
+       #endif
+    }
 
     void loadStateData (const void* data, int size)
     {
-       #if JUCE_VST3_CAN_REPLACE_VST2
-        if (loadVST2CompatibleState ((const char*) data, size))
-            return;
-       #endif
+        if (vst3CanReplaveVst2())
+            if (loadVST2CompatibleState ((const char*) data, size))
+                return;
+
         setStateInformation (data, size);
     }
 

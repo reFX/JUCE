@@ -51,7 +51,9 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations",
                                      "-Wmicrosoft-cast",
                                      "-Wconditional-uninitialized",
                                      "-Wexpansion-to-defined",
-                                     "-Wunsafe-loop-optimizations")
+                                     "-Wunsafe-loop-optimizations",
+                                     "-Wunused-member-function",
+                                     "-Wused-but-marked-unused")
 
 #if JUCE_LINUX || JUCE_BSD
  #ifndef JUCE_USE_FREETYPE

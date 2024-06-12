@@ -1541,7 +1541,7 @@ public:
 
         @see setEnabled, enablementChanged
     */
-    bool isEnabled() const noexcept;
+    bool isEnabled (bool includeParents = true) const noexcept;
 
     /** Enables or disables this component.
 
@@ -2022,6 +2022,7 @@ public:
         The return value is relative to the component's top-left corner.
     */
     Point<int> getMouseXYRelative() const;
+    Point<float> getMouseXYRelativeFloat() const;
 
     //==============================================================================
     /** Called when this component's size has been changed.
@@ -2307,7 +2308,7 @@ public:
     /** Returns true if the specified colour ID has been explicitly set for this
         component using the setColour() method.
     */
-    bool isColourSpecified (int colourID) const;
+    bool isColourSpecified (int colourID, bool inheritFromParent = false) const;
 
     /** This looks for any colours that have been specified for this component,
         and copies them to the specified target component.
