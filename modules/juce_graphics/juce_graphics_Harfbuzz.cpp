@@ -55,6 +55,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations",
                                      "-Wunused-member-function",
                                      "-Wused-but-marked-unused")
 
+#define HAVE_ATEXIT 1
+
 #if JUCE_LINUX || JUCE_BSD
  #ifndef JUCE_USE_FREETYPE
   #define JUCE_USE_FREETYPE 1
