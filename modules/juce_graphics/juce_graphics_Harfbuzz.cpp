@@ -54,7 +54,10 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations",
                                      "-Wunsafe-loop-optimizations",
                                      "-Wunused-member-function",
                                      "-Wused-but-marked-unused",
-                                     "-Wformat-overflow")
+                                     "-Wformat-overflow",
+                                     "-Wformat-overflow",
+                                     "-Woverflow",
+                                     "-Wimplicit-fallthrough")
 
 #define HAVE_ATEXIT 1
 
