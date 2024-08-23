@@ -649,7 +649,7 @@ void CoreGraphicsContext::drawRoundedRectangle (const Rectangle<float>& r, float
         const auto outsideCornerSize = cornerSize + lineThickness;
 
         const auto insideRect = r.reduced (lineThickness);
-        const auto insideCornerSize = cornerSize - lineThickness;
+        const auto insideCornerSize = std::max (0.0f, cornerSize - lineThickness);
 
         detail::MutablePathPtr path { CGPathCreateMutable() };
         CGPathAddRoundedRect (path.get(), nullptr, convertToCGRectFlipped (outsideRect),
