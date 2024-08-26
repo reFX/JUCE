@@ -104,7 +104,7 @@ enum ControllerNumbers
 	kAfterTouch = 128,			///< After Touch (associated to Channel Pressure)
 	kPitchBend  = 129,			///< Pitch Bend Change
 
-	kCountCtrlNumber,			///< Count of Controller Number
+	kCountCtrlNumber = 130,		///< Count of Controller Number
 
 	//---Extra for kLegacyMIDICCOutEvent-
 	kCtrlProgramChange = 130,	///< Program Change (use LegacyMIDICCOutEvent.value only)

@@ -44,9 +44,13 @@
 #define str16BufferSize(buffer) (sizeof(buffer)/sizeof(Steinberg::char16))
 
 #if SMTG_OS_WINDOWS
-#define FORMAT_INT64A "I64d"
-#define FORMAT_UINT64A "I64u"
-
+ #if __clang__
+  #define FORMAT_INT64A  "lld"
+  #define FORMAT_UINT64A "llu"
+ #else
+  #define FORMAT_INT64A "I64d"
+  #define FORMAT_UINT64A "I64u"
+ #endif
 #elif SMTG_OS_MACOS || SMTG_OS_LINUX
 #define FORMAT_INT64A  "lld"
 #define FORMAT_UINT64A "llu"
