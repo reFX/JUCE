@@ -386,8 +386,8 @@ void Viewport::updateVisibleArea()
             }
         }
 
-        if (vBarVisible)  contentArea.setWidth  (getWidth()  - scrollbarWidth);
-        if (hBarVisible)  contentArea.setHeight (getHeight() - scrollbarWidth);
+        if (vBarVisible && ! useFullArea)  contentArea.setWidth  (getWidth()  - scrollbarWidth);
+        if (hBarVisible && ! useFullArea)  contentArea.setHeight (getHeight() - scrollbarWidth);
 
         if (! vScrollbarRight  && vBarVisible)
             contentArea.setX (scrollbarWidth);

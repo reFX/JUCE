@@ -319,6 +319,12 @@ public:
     */
     bool isCurrentlyScrollingOnDrag() const noexcept;
 
+    /** Sets if component should go under the scrollbars */
+    void setUseFullArea (bool a)    { useFullArea = a; recreateScrollbars(); }
+
+    /** Returns if component should go under the scrollbars */
+    bool getUseFullArea()           { return useFullArea; }
+
     //==============================================================================
     /** @internal */
     void resized() override;
@@ -368,6 +374,7 @@ private:
     bool customScrollBarThickness = false;
     bool allowScrollingWithoutScrollbarV = false, allowScrollingWithoutScrollbarH = false;
     bool vScrollbarRight = true, hScrollbarBottom = true;
+    bool useFullArea = false;
 
     struct DragToScrollListener;
     std::unique_ptr<DragToScrollListener> dragToScrollListener;
