@@ -1462,7 +1462,7 @@ public:
 
         void getContentSize (int& w, int& h) override
         {
-            w = font.getStringWidth (text) + 18;
+            w = GlyphArrangement::getStringWidthInt (font, text) + 18;
             h = (int) (font.getHeight() * 1.6f);
         }
 
