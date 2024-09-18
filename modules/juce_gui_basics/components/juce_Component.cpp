@@ -354,7 +354,7 @@ bool Component::isShowing() const
         return parentComponent->isShowing();
 
     if (auto* peer = getPeer())
-        return ! peer->isMinimised();
+        return peer->isShowing();
 
     return false;
 }
