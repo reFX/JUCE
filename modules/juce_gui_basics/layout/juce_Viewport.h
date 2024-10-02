@@ -380,6 +380,7 @@ private:
     std::unique_ptr<DragToScrollListener> dragToScrollListener;
 
     Point<int> viewportPosToCompPos (Point<int>) const;
+    Rectangle<int> getContentBounds() const;
 
     void updateVisibleArea();
     void deleteOrRemoveContentComp();
