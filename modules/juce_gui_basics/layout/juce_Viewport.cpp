@@ -376,32 +376,43 @@ void Viewport::updateVisibleArea()
         vBarVisible = canShowVBar && ! getVerticalScrollBar().autoHides();
         contentArea = getLocalBounds();
 
-        if (contentComp != nullptr && ! contentArea.contains (contentComp->getBounds()))
+        if (useFullArea)
         {
-            hBarVisible = canShowHBar && (hBarVisible || contentComp->getX() < 0 || contentComp->getRight() > contentArea.getWidth());
-            vBarVisible = canShowVBar && (vBarVisible || contentComp->getY() < 0 || contentComp->getBottom() > contentArea.getHeight());
-
-            if (vBarVisible)
-                contentArea.setWidth (getWidth() - scrollbarWidth);
-
-            if (hBarVisible)
-                contentArea.setHeight (getHeight() - scrollbarWidth);
-
-            if (! contentArea.contains (contentComp->getBounds()))
+            if (contentComp != nullptr && ! contentArea.contains (contentComp->getBounds()))
             {
-                hBarVisible = canShowHBar && (hBarVisible || contentComp->getRight() > contentArea.getWidth());
-                vBarVisible = canShowVBar && (vBarVisible || contentComp->getBottom() > contentArea.getHeight());
+                hBarVisible = canShowHBar && (hBarVisible || contentComp->getX() < 0 || contentComp->getRight() > contentArea.getWidth());
+                vBarVisible = canShowVBar && (vBarVisible || contentComp->getY() < 0 || contentComp->getBottom() > contentArea.getHeight());
             }
         }
+        else
+        {
+            if (contentComp != nullptr && ! contentArea.contains (contentComp->getBounds()))
+            {
+                hBarVisible = canShowHBar && (hBarVisible || contentComp->getX() < 0 || contentComp->getRight() > contentArea.getWidth());
+                vBarVisible = canShowVBar && (vBarVisible || contentComp->getY() < 0 || contentComp->getBottom() > contentArea.getHeight());
 
-        if (vBarVisible && ! useFullArea)  contentArea.setWidth  (getWidth()  - scrollbarWidth);
-        if (hBarVisible && ! useFullArea)  contentArea.setHeight (getHeight() - scrollbarWidth);
+                if (vBarVisible)
+                    contentArea.setWidth (getWidth() - scrollbarWidth);
 
-        if (! vScrollbarRight  && vBarVisible)
-            contentArea.setX (scrollbarWidth);
+                if (hBarVisible)
+                    contentArea.setHeight (getHeight() - scrollbarWidth);
 
-        if (! hScrollbarBottom && hBarVisible)
-            contentArea.setY (scrollbarWidth);
+                if (! contentArea.contains (contentComp->getBounds()))
+                {
+                    hBarVisible = canShowHBar && (hBarVisible || contentComp->getRight() > contentArea.getWidth());
+                    vBarVisible = canShowVBar && (vBarVisible || contentComp->getBottom() > contentArea.getHeight());
+                }
+            }
+
+            if (vBarVisible)  contentArea.setWidth  (getWidth()  - scrollbarWidth);
+            if (hBarVisible)  contentArea.setHeight (getHeight() - scrollbarWidth);
+
+            if (! vScrollbarRight  && vBarVisible)
+                contentArea.setX (scrollbarWidth);
+
+            if (! hScrollbarBottom && hBarVisible)
+                contentArea.setY (scrollbarWidth);
+        }
 
         if (contentComp == nullptr)
         {
@@ -423,7 +434,11 @@ void Viewport::updateVisibleArea()
     auto& hbar = getHorizontalScrollBar();
     auto& vbar = getVerticalScrollBar();
 
-    hbar.setBounds (contentArea.getX(), hScrollbarBottom ? contentArea.getHeight() : 0, contentArea.getWidth(), scrollbarWidth);
+    if (useFullArea)
+        hbar.setBounds (contentArea.getX(), hScrollbarBottom ? contentArea.getHeight() - scrollbarWidth : 0, contentArea.getWidth(), scrollbarWidth);
+    else
+        hbar.setBounds (contentArea.getX(), hScrollbarBottom ? contentArea.getHeight() : 0, contentArea.getWidth(), scrollbarWidth);
+
     hbar.setRangeLimits (0.0, contentBounds.getWidth());
     hbar.setCurrentRange (visibleOrigin.x, contentArea.getWidth());
     hbar.setSingleStepSize (singleStepX);
@@ -431,7 +446,11 @@ void Viewport::updateVisibleArea()
     if (canShowHBar && ! hBarVisible)
         visibleOrigin.setX (0);
 
-    vbar.setBounds (vScrollbarRight ? contentArea.getWidth() : 0, contentArea.getY(), scrollbarWidth, contentArea.getHeight());
+    if (useFullArea)
+        vbar.setBounds (vScrollbarRight ? contentArea.getWidth() - scrollbarWidth : 0, contentArea.getY(), scrollbarWidth, contentArea.getHeight());
+    else
+        vbar.setBounds (vScrollbarRight ? contentArea.getWidth() : 0, contentArea.getY(), scrollbarWidth, contentArea.getHeight());
+
     vbar.setRangeLimits (0.0, contentBounds.getHeight());
     vbar.setCurrentRange (visibleOrigin.y, contentArea.getHeight());
     vbar.setSingleStepSize (singleStepY);

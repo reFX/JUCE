@@ -320,7 +320,7 @@ public:
     bool isCurrentlyScrollingOnDrag() const noexcept;
 
     /** Sets if component should go under the scrollbars */
-    void setUseFullArea (bool a)    { useFullArea = a; recreateScrollbars(); }
+    void setUseFullArea (bool a)    { useFullArea = a; recreateScrollbars (); updateVisibleArea (); }
 
     /** Returns if component should go under the scrollbars */
     bool getUseFullArea()           { return useFullArea; }
