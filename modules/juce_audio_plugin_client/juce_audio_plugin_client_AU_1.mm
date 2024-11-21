@@ -2205,7 +2205,9 @@ private:
 
                 const auto init = [&]
                 {
+                    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability-new")
                     end = MIDIEventListInit (&stackList, kMIDIProtocol_1_0);
+                    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
                 };
 
                 const auto send = [&]
@@ -2218,6 +2220,7 @@ private:
                     static_assert (sizeof (uint32_t) == sizeof (UInt32)
                                    && alignof (uint32_t) == alignof (UInt32),
                                    "If this fails, the cast below will be broken too!");
+                    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability-new")
                     using List = struct MIDIEventList;
                     end = MIDIEventListAdd (&stackList,
                                             sizeof (List::packet),
@@ -2225,6 +2228,7 @@ private:
                                             (MIDITimeStamp) timeStamp,
                                             view.size(),
                                             reinterpret_cast<const UInt32*> (view.data()));
+                    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
                 };
 
                 init();
