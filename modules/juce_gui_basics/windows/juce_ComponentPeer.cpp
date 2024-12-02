@@ -39,6 +39,8 @@
 namespace juce
 {
 
+CriticalSection ComponentPeer::paintLock;
+
 static uint32 lastUniquePeerID = 1;
 
 //==============================================================================
@@ -145,7 +147,9 @@ void ComponentPeer::handlePaint (LowLevelGraphicsContext& contextToPaintTo)
 
     JUCE_TRY
     {
-        component.paintEntireComponent (g, true);
+        CriticalSection::ScopedTryLockType tl (paintLock);
+        if (tl.isLocked())
+            component.paintEntireComponent (g, true);
     }
     JUCE_CATCH_EXCEPTION
 

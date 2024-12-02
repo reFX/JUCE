@@ -578,6 +578,8 @@ public:
     */
     uint64_t getNumFramesPainted() const { return peerFrameNumber; }
 
+    static CriticalSection paintLock;
+
 protected:
     //==============================================================================
     static void forceDisplayUpdate();
