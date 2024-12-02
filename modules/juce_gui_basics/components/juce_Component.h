@@ -2649,16 +2649,16 @@ private:
     ListenerList<ComponentListener> componentListeners;
     NamedValueSet properties;
 
-	struct ColourSetting
-	{
-		int colourID;
-		Colour colour;
+    struct ColourSetting
+    {
+        int colourID;
+        Colour colour;
 
-		bool operator<  (const ColourSetting& other) const noexcept  { return colourID <  other.colourID; }
-		bool operator== (const ColourSetting& other) const noexcept  { return colourID == other.colourID; }
-	};
+        bool operator<  (const ColourSetting& other) const noexcept  { return colourID <  other.colourID; }
+        bool operator== (const ColourSetting& other) const noexcept  { return colourID == other.colourID; }
+    };
 
-	SortedSet<ColourSetting> colours;
+    SortedSet<ColourSetting> colours;
 
     friend class WeakReference<Component>;
     WeakReference<Component>::Master masterReference;

@@ -1925,11 +1925,11 @@ void Component::sendLookAndFeelChange()
 
 Colour Component::findColour (int colourID, bool inheritFromParent) const
 {
-	const ColourSetting c = { colourID, Colour() };
-	auto index = colours.indexOf (c);
+    const ColourSetting c = { colourID, Colour() };
+    auto index = colours.indexOf (c);
 
-	if (index >= 0)
-		return colours[index].colour;
+    if (index >= 0)
+        return colours[index].colour;
 
     if (inheritFromParent && parentComponent != nullptr
          && (lookAndFeel == nullptr || ! lookAndFeel->isColourSpecified (colourID)))
@@ -1940,11 +1940,11 @@ Colour Component::findColour (int colourID, bool inheritFromParent) const
 
 bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
 {
-	const ColourSetting c = { colourID, Colour() };
-	auto index = colours.indexOf (c);
+    const ColourSetting c = { colourID, Colour() };
+    auto index = colours.indexOf (c);
 
-	if (index >= 0)
-		return true;
+    if (index >= 0)
+        return true;
 
     if (inheritFromParent && parentComponent != nullptr
         && (lookAndFeel == nullptr || ! lookAndFeel->isColourSpecified (colourID)))
@@ -1955,11 +1955,11 @@ bool Component::isColourSpecified (int colourID, bool inheritFromParent) const
 
 void Component::removeColour (int colourID)
 {
-	const ColourSetting c = { colourID, Colour() };
-	auto index = colours.indexOf (c);
+    const ColourSetting c = { colourID, Colour() };
+    auto index = colours.indexOf (c);
 
-	if (index >= 0)
-		colours.remove (index);
+    if (index >= 0)
+        colours.remove (index);
 
     if (properties.remove (detail::ComponentHelpers::getColourPropertyID (colourID)))
         colourChanged();
@@ -1967,7 +1967,7 @@ void Component::removeColour (int colourID)
 
 void Component::setColour (int colourID, Colour colour)
 {
-	colours.add ({colourID, colour});
+    colours.add ({colourID, colour});
 
     if (properties.set (detail::ComponentHelpers::getColourPropertyID (colourID), (int) colour.getARGB()))
         colourChanged();
@@ -1977,7 +1977,7 @@ void Component::copyAllExplicitColoursTo (Component& target) const
 {
     bool changed = false;
 
-	target.colours.addSet (colours);
+    target.colours.addSet (colours);
 
     for (int i = properties.size(); --i >= 0;)
     {
