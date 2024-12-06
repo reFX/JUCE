@@ -197,10 +197,9 @@ void MidiKeyboardComponent::updateNoteUnderMouse (Point<float> pos, bool isDown,
 
 void MidiKeyboardComponent::repaintNote (int noteNum)
 {
-    if (getRangeStart() <= noteNum && noteNum <= getRangeEnd())
+    if (isEnabled() && getRangeStart() <= noteNum && noteNum <= getRangeEnd())
         repaint (getRectangleForKey (noteNum).getSmallestIntegerContainer());
 }
-
 
 void MidiKeyboardComponent::mouseMove (const MouseEvent& e)
 {
@@ -466,13 +465,13 @@ void MidiKeyboardComponent::colourChanged()
 //==============================================================================
 void MidiKeyboardComponent::drawWhiteKey (int midiNoteNumber, Graphics& g, Rectangle<float> area)
 {
-    drawWhiteNote (midiNoteNumber, g, area, state.isNoteOnForChannels (midiInChannelMask, midiNoteNumber),
+    drawWhiteNote (midiNoteNumber, g, area, isEnabled () && state.isNoteOnForChannels (midiInChannelMask, midiNoteNumber),
                    mouseOverNotes.contains (midiNoteNumber), findColour (keySeparatorLineColourId), findColour (textLabelColourId));
 }
 
 void MidiKeyboardComponent::drawBlackKey (int midiNoteNumber, Graphics& g, Rectangle<float> area)
 {
-    drawBlackNote (midiNoteNumber, g, area, state.isNoteOnForChannels (midiInChannelMask, midiNoteNumber),
+    drawBlackNote (midiNoteNumber, g, area, isEnabled () && state.isNoteOnForChannels (midiInChannelMask, midiNoteNumber),
                    mouseOverNotes.contains (midiNoteNumber), findColour (blackNoteColourId));
 }
 
