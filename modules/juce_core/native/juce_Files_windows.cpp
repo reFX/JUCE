@@ -731,7 +731,7 @@ File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
         case userDownloadsDirectory:
         {
             LPWSTR ptr = nullptr;
-            auto result = SHGetKnownFolderPath (FOLDERID_Downloads, 0, nullptr, &ptr);
+            SHGetKnownFolderPath (FOLDERID_Downloads, 0, nullptr, &ptr);
 
             File path;
 
