@@ -204,6 +204,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             }
           #endif
             case userMusicDirectory:                resultPath = "~/Music"; break;
+            case userDownloadsDirectory:            resultPath = "~/Downloads"; break;
             case userMoviesDirectory:               resultPath = "~/Movies"; break;
             case userPicturesDirectory:             resultPath = "~/Pictures"; break;
             case userApplicationDataDirectory:      resultPath = "~/Library"; break;
