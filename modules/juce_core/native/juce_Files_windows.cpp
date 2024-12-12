@@ -724,9 +724,23 @@ File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
         case globalApplicationsDirectory:       csidlType = CSIDL_PROGRAM_FILES;        break;
         case globalApplicationsDirectoryX86:    csidlType = CSIDL_PROGRAM_FILESX86;     break;
         case windowsLocalAppData:               csidlType = CSIDL_LOCAL_APPDATA;        break;
-        case userMusicDirectory:                csidlType = 0x0d; /*CSIDL_MYMUSIC*/     break;
-        case userMoviesDirectory:               csidlType = 0x0e; /*CSIDL_MYVIDEO*/     break;
-        case userPicturesDirectory:             csidlType = 0x27; /*CSIDL_MYPICTURES*/  break;
+        case userMusicDirectory:                csidlType = CSIDL_MYMUSIC;              break;
+        case userMoviesDirectory:               csidlType = CSIDL_MYVIDEO;              break;
+        case userPicturesDirectory:             csidlType = CSIDL_MYPICTURES;           break;
+
+        case userDownloadsDirectory:
+        {
+            LPWSTR ptr = nullptr;
+            auto result = SHGetKnownFolderPath (FOLDERID_Downloads, 0, nullptr, &ptr);
+
+            File path;
+
+            if ( ptr )
+                path = File (String (ptr));
+
+            CoTaskMemFree (ptr);
+            return path;
+        }
 
         case tempDirectory:
         {

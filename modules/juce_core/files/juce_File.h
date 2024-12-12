@@ -889,6 +889,9 @@ public:
         /** The folder that contains the user's desktop objects. */
         userDesktopDirectory,
 
+        /** The folder that contains the user's downloaded files. */
+        userDownloadsDirectory,
+
         /** The most likely place where a user might store their music files. */
         userMusicDirectory,
 
