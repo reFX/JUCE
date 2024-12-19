@@ -931,11 +931,6 @@ void AudioProcessor::setCurrentProgramStateInformation (const void* data, int si
 //==============================================================================
 void AudioProcessor::updateTrackProperties (const AudioProcessor::TrackProperties&)    {}
 
-bool AudioProcessor::hasNameForMidiNoteNumber (int, int, juce::String&)
-{
-    return false;
-}
-
 //==============================================================================
 // magic number to identify memory blocks that we've stored as XML
 const uint32 magicXmlNumber = 0x21324356;
@@ -953,6 +948,11 @@ void AudioProcessor::copyXmlToBinary (const XmlElement& xml, juce::MemoryBlock& 
     // go back and write the string length..
     static_cast<uint32*> (destData.getData())[1]
         = ByteOrder::swapIfBigEndian ((uint32) destData.getSize() - 9);
+}
+
+std::optional<String> AudioProcessor::getNameForMidiNoteNumber (int /*note*/, int /*midiChannel*/)
+{
+    return std::nullopt;
 }
 
 std::unique_ptr<XmlElement> AudioProcessor::getXmlFromBinary (const void* data, const int sizeInBytes)
