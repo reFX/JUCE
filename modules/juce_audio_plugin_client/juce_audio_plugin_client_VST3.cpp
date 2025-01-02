@@ -1375,6 +1375,25 @@ public:
         return kResultFalse;
     }
 
+    tresult PLUGIN_API hasProgramPitchNames (Vst::ProgramListID listId, Steinberg::int32 programIndex) override
+    {
+        if (audioProcessor != nullptr)
+            return audioProcessor->hasProgramPitchNames (listId, programIndex);
+
+        jassertfalse;
+        return kResultFalse;
+    }
+
+    tresult PLUGIN_API getProgramPitchName (Vst::ProgramListID listId, Steinberg::int32 programIndex,
+                                            Steinberg::int16 midiPitch, Vst::String128 name) override
+    {
+        if (audioProcessor != nullptr)
+            return audioProcessor->getProgramPitchName (listId, programIndex, midiPitch, name);
+
+        jassertfalse;
+        return kResultFalse;
+    }
+
     tresult PLUGIN_API selectUnit (Vst::UnitID unitId) override
     {
         if (audioProcessor != nullptr)
