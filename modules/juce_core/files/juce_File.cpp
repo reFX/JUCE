@@ -849,13 +849,13 @@ String File::createLegalPathName (const String& original)
         s = s.substring (2);
     }
 
-    return start + s.removeCharacters ("\"#@,;:<>*^|?")
+    return start + s.removeCharacters ("\",;:<>*^|?")
                     .substring (0, 1024);
 }
 
 String File::createLegalFileName (const String& original)
 {
-    auto s = original.removeCharacters ("\"#@,;:<>*^|?\\/");
+    auto s = original.removeCharacters ("\",;:<>*^|?\\/");
 
     const int maxLength = 128; // only the length of the filename, not the whole path
     auto len = s.length();
