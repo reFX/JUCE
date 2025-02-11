@@ -1195,7 +1195,7 @@ local void check_match(deflate_state *s, IPos start, IPos match, int length)
         z_error("invalid match");
     }
     if (z_verbose > 1) {
-        fprintf(stderr,"\\[%d,%d]", start-match, length);
+        fprintf(stderr,"\\[%d,%d]", (int)(start-match), length);
         do { putc(s->window[start++], stderr); } while (--length != 0);
     }
 }
