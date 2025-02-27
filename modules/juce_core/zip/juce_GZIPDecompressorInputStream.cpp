@@ -52,7 +52,8 @@ namespace zlibNamespace
                                        "-Wcomma",
                                        "-Wcast-align",
                                        "-Wkeyword-macro",
-                                       "-Wmissing-prototypes")
+                                       "-Wmissing-prototypes",
+                                       "-Wtautological-type-limit-compare")
 
   #pragma push_macro ("register")
   #define register
