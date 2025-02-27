@@ -63,7 +63,7 @@ namespace pnglibNamespace
                                         "-Wzero-as-null-pointer-constant")
 
   #undef check
-  using std::abs;
+  using ::std::abs;
   #define NO_DUMMY_DECL
   #define PNGLCONF_H 1
 
