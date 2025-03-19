@@ -425,13 +425,56 @@ public:
         applyWorldAndFillTypeTransforms = applyFillTypeTransform | applyWorldTransform
     };
 
-    ComSmartPtr<ID2D1Brush> getBrush (int flags = applyWorldAndFillTypeTransforms)
+    class TransformedBrush
+    {
+    public:
+        TransformedBrush() = default;
+
+        explicit TransformedBrush (ComSmartPtr<ID2D1Brush> brushIn)
+            : brush { brushIn }
+        {}
+
+        TransformedBrush (ComSmartPtr<ID2D1Brush> brushIn, AffineTransform transformIn)
+            : brush { brushIn },
+              transform { transformIn }
+        {}
+
+        ComSmartPtr<ID2D1Brush> get() const
+        {
+            if (isEmpty())
+                return {};
+
+            brush->SetTransform (D2DUtilities::transformToMatrix (transform));
+            return brush;
+        }
+
+        auto getTransform() const
+        {
+            return transform;
+        }
+
+        void setTransform (AffineTransform newTransform)
+        {
+            transform = newTransform;
+        }
+
+        bool isEmpty() const
+        {
+            return brush == nullptr;
+        }
+
+    private:
+        ComSmartPtr<ID2D1Brush> brush;
+        AffineTransform transform;
+    };
+
+    TransformedBrush getBrush (int flags = applyWorldAndFillTypeTransforms)
     {
         if (fillType.isInvisible())
-            return nullptr;
+            return {};
 
         if (! fillType.isGradient() && ! fillType.isTiledImage())
-            return currentBrush;
+            return TransformedBrush { currentBrush };
 
         Point<float> translation{};
         AffineTransform transform{};
@@ -490,10 +533,9 @@ public:
                 transform = transform.followedBy (currentTransform.getTransform().inverted());
         }
 
-        currentBrush->SetTransform (D2DUtilities::transformToMatrix (transform));
         currentBrush->SetOpacity (fillType.getOpacity());
 
-        return currentBrush;
+        return { currentBrush, transform };
     }
 
     bool doesIntersectClipList (Rectangle<int> r) const noexcept
@@ -829,7 +871,7 @@ public:
                                  ? SavedState::BrushTransformFlags::applyWorldAndFillTypeTransforms
                                  : SavedState::BrushTransformFlags::applyFillTypeTransform;
 
-        const auto brush = owner.currentState->getBrush (fillTransform);
+        const auto brush = owner.currentState->getBrush (fillTransform).get();
 
         if (transform.isOnlyTranslated)
         {
@@ -1344,7 +1386,7 @@ void Direct2DGraphicsContext::fillRect (const Rectangle<int>& r, bool replaceExi
                                                                      matrix,
                                                                      geo.resetAndGetPointerAddress());
 
-        const auto brush = currentState->fillType.isInvisible() ? currentState->currentBrush : currentState->getBrush();
+        const auto brush = currentState->fillType.isInvisible() ? currentState->currentBrush : currentState->getBrush().get();
         currentState->layers.fillGeometryWithNoLayersActive (getPimpl()->getDeviceContext(), geo, brush);
         return;
     }
@@ -1413,7 +1455,7 @@ void Direct2DGraphicsContext::fillPath (const Path& p, const AffineTransform& tr
     applyPendingClipList();
 
     const auto deviceContext = getPimpl()->getDeviceContext();
-    const auto brush = currentState->getBrush (SavedState::applyFillTypeTransform);
+    const auto brush = currentState->getBrush (SavedState::applyFillTypeTransform).get();
     const auto factory = getPimpl()->getDirect2DFactory();
     const auto geometry = D2DHelpers::pathToPathGeometry (factory,
                                                           p,
@@ -1440,7 +1482,7 @@ void Direct2DGraphicsContext::strokePath (const Path& p, const PathStrokeType& s
     applyPendingClipList();
 
     const auto deviceContext = getPimpl()->getDeviceContext();
-    const auto brush = currentState->getBrush (SavedState::applyFillTypeTransform);
+    const auto brush = currentState->getBrush (SavedState::applyFillTypeTransform).get();
     const auto factory = getPimpl()->getDirect2DFactory();
     const auto strokeStyle = D2DHelpers::pathStrokeTypeToStrokeStyle (factory, strokeType);
     const auto geometry = D2DHelpers::pathToPathGeometry (factory,
@@ -1681,17 +1723,18 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
         return;
 
     const auto fontScale = font.getHorizontalScale();
-    const auto scaledTransform = AffineTransform::scale (fontScale, 1.0f).followedBy (transform);
-    const auto glyphRunTransform = scaledTransform.followedBy (currentState->currentTransform.getTransform());
-    const auto onlyTranslated = glyphRunTransform.isOnlyTranslation();
+    const auto textTransform = AffineTransform::scale (fontScale, 1.0f).followedBy (transform);
+    const auto worldTransform = currentState->currentTransform.getTransform();
+    const auto textAndWorldTransform = textTransform.followedBy (worldTransform);
+    const auto onlyTranslated = textAndWorldTransform.isOnlyTranslation();
 
     const auto fillTransform = onlyTranslated
                              ? SavedState::BrushTransformFlags::applyWorldAndFillTypeTransforms
                              : SavedState::BrushTransformFlags::applyFillTypeTransform;
 
-    const auto brush = currentState->getBrush (fillTransform);
+    auto brush = currentState->getBrush (fillTransform);
 
-    if (! brush)
+    if (brush.isEmpty())
         return;
 
     applyPendingClipList();
@@ -1699,9 +1742,15 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
     D2D1_POINT_2F baselineOrigin { 0.0f, 0.0f };
 
     if (onlyTranslated)
-        baselineOrigin = { glyphRunTransform.getTranslationX(), glyphRunTransform.getTranslationY() };
+    {
+        baselineOrigin = { textAndWorldTransform.getTranslationX(), textAndWorldTransform.getTranslationY() };
+    }
     else
-        getPimpl()->setDeviceContextTransform (glyphRunTransform);
+    {
+        const auto brushTransform = brush.getTransform();
+        brush.setTransform (brushTransform.followedBy (textTransform.inverted()));
+        getPimpl()->setDeviceContextTransform (textAndWorldTransform);
+    }
 
     auto& run = getPimpl()->glyphRun;
     run.replace (positions, fontScale);
@@ -1787,7 +1836,7 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
                     if (! useForeground)
                         colourBrush->SetColor (colourRun->runColor);
 
-                    const auto brushToUse = useForeground ? ComSmartPtr<ID2D1Brush> (brush)
+                    const auto brushToUse = useForeground ? ComSmartPtr<ID2D1Brush> (brush.get())
                                                           : ComSmartPtr<ID2D1Brush> (colourBrush);
 
                     ctx->DrawGlyphRun ({ colourRun->baselineOriginX, colourRun->baselineOriginY },
@@ -1809,7 +1858,7 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
     };
 
     if (! tryDrawColourGlyphs())
-        deviceContext->DrawGlyphRun (baselineOrigin, &directWriteGlyphRun, brush);
+        deviceContext->DrawGlyphRun (baselineOrigin, &directWriteGlyphRun, brush.get());
 
     if (! onlyTranslated)
         getPimpl()->resetDeviceContextTransform();
