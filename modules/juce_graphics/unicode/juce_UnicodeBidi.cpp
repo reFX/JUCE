@@ -109,7 +109,11 @@ public:
                     const auto begin = std::find_if (it, endRuns, [&] (const SBRun& x) { return currentLevel <= x.level; });
                     it = std::find_if (begin, endRuns, [&] (const SBRun& x) { return x.level < currentLevel; });
 
-                    std::reverse (getStartOfRunInResult (begin), getStartOfRunInResult (it));
+                    auto s = getStartOfRunInResult (begin);
+                    auto e = getStartOfRunInResult (it);
+
+                    if (s < e)
+                        std::reverse (s, e);
                 }
             };
 
