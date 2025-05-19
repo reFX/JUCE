@@ -250,8 +250,7 @@ struct ComponentHelpers
 
     static void releaseAllCachedImageResources (Component& c)
     {
-        if (auto* cached = c.getCachedComponentImage())
-            cached->releaseResources();
+        c.invalidateCachedImageResources();
 
         for (auto* child : c.childComponentList)
             releaseAllCachedImageResources (*child);
