@@ -811,7 +811,7 @@ private:
         setContentOwned (content, resizeAutomatically);
     }
 
-    void buttonClicked (Button*) override
+    void buttonClicked (Button* button) override
     {
         PopupMenu m;
 
@@ -830,7 +830,7 @@ private:
         m.addSeparator();
         m.addItem (TRANS("Reset to default state"), [this] { resetToDefaultState(); });
 
-        m.showMenuAsync (PopupMenu::Options());
+        m.showMenuAsync (PopupMenu::Options().withTargetComponent (button));
     }
 
     //==============================================================================
