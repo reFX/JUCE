@@ -99,7 +99,7 @@ public:
                 << "\"New\": \"" << VST3::UID { newId }.toString() << "\", "
                 << "\"Old\": [";
 
-            for (int i = 0; i < oldIds.size(); ++i)
+            for (int i = 0; i < int (oldIds.size()); ++i)
             {
                 str << "\""
                     << std::hex
@@ -113,7 +113,7 @@ public:
                 str.clear();
                 str << "\"";
 
-                if (i < oldIds.size() - 1)
+                if (i < int (oldIds.size()) - 1)
                     str << ", ";
             }
 
