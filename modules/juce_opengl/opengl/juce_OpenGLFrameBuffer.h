@@ -81,13 +81,12 @@ public:
     void saveAndRelease();
 
     /** Restores the framebuffer content that was previously saved using saveAndRelease().
-        After saving to main memory, the original state can be restored by calling restoreToGPUMemory().
     */
     bool reloadSavedCopy (OpenGLContext& context);
 
     //==============================================================================
     /** Returns true if a valid buffer has been allocated. */
-    bool isValid() const noexcept                       { return pimpl != nullptr; }
+    bool isValid() const noexcept;
 
     /** Returns the width of the buffer. */
     int getWidth() const noexcept;
@@ -132,9 +131,6 @@ public:
 private:
     class Pimpl;
     std::unique_ptr<Pimpl> pimpl;
-
-    class SavedState;
-    std::unique_ptr<SavedState> savedState;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OpenGLFrameBuffer)
 };

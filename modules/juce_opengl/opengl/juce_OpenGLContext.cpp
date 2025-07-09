@@ -193,6 +193,10 @@ public:
     //==============================================================================
     void pause()
     {
+       #if JUCE_ANDROID
+        context.executeOnGLThread ([this] (auto&) { nativeContext->notifyWillPause(); }, true);
+       #endif
+
         renderThread->remove (this);
 
         if ((state.fetch_and (~StateFlags::initialised) & StateFlags::initialised) == 0)
@@ -443,10 +447,14 @@ public:
 
         if (auto* peer = component.getPeer())
         {
+            auto& desktop = Desktop::getInstance();
+            const auto localBounds = component.getLocalBounds();
+            const auto globalArea = component.getScreenBounds() * desktop.getGlobalScaleFactor();
+
            #if JUCE_MAC
             updateScreen();
 
-            const auto displayScale = Desktop::getInstance().getGlobalScaleFactor() * [this]
+            const auto displayScale = std::invoke ([this]
             {
                 if (auto* view = getCurrentView())
                 {
@@ -458,16 +466,14 @@ public:
                 }
 
                 return areaAndScale.get().scale;
-            }();
-           #else
-            const auto displayScale = Desktop::getInstance().getDisplays()
-                                                            .getDisplayForRect (component.getTopLevelComponent()
-                                                                                        ->getScreenBounds())
-                                                           ->scale;
-           #endif
+            });
 
-            const auto localBounds = component.getLocalBounds();
-            const auto newArea = peer->getComponent().getLocalArea (&component, localBounds).withZeroOrigin() * displayScale;
+            const auto newArea = globalArea.withZeroOrigin() * displayScale;
+           #else
+            const auto newArea = desktop.getDisplays()
+                                        .logicalToPhysical (globalArea)
+                                                       .withZeroOrigin();
+           #endif
 
             // On Windows some hosts (Pro Tools 2022.7) do not take the current DPI into account
             // when sizing plugin editor windows.
@@ -669,6 +675,10 @@ public:
 
         if (context.renderer != nullptr)
             context.renderer->newOpenGLContextCreated();
+
+       #if JUCE_ANDROID
+        nativeContext->notifyDidResume();
+       #endif
 
         return InitResult::success;
     }
@@ -1669,9 +1679,19 @@ void OpenGLContext::copyTexture (const Rectangle<int>& targetClipArea,
     JUCE_CHECK_OPENGL_ERROR
 }
 
+void OpenGLContext::NativeContextListener::addListener (OpenGLContext& ctx, NativeContextListener& l)
+{
+    ctx.nativeContext->addListener (l);
+}
+
+void OpenGLContext::NativeContextListener::removeListener (OpenGLContext& ctx, NativeContextListener& l)
+{
+    ctx.nativeContext->removeListener (l);
+}
+
 #if JUCE_ANDROID
 
-void OpenGLContext::NativeContext::surfaceCreated (LocalRef<jobject>)
+void OpenGLContext::NativeContext::surfaceCreated (LocalRef<jobject> holder)
 {
     {
         const std::lock_guard lock { nativeHandleMutex };
@@ -1681,7 +1701,7 @@ void OpenGLContext::NativeContext::surfaceCreated (LocalRef<jobject>)
         // has the context already attached?
         jassert (surface.get() == EGL_NO_SURFACE && context.get() == EGL_NO_CONTEXT);
 
-        const auto window = getNativeWindow();
+        const auto window = getNativeWindowFromSurfaceHolder (holder);
 
         if (window == nullptr)
         {
@@ -1690,7 +1710,11 @@ void OpenGLContext::NativeContext::surfaceCreated (LocalRef<jobject>)
             return;
         }
 
-        // create the surface
+        // Reset the surface (only one window surface may be alive at a time)
+        context.reset();
+        surface.reset();
+
+        // Create the surface
         surface.reset (eglCreateWindowSurface (display, config, window.get(), nullptr));
         jassert (surface.get() != EGL_NO_SURFACE);
 
