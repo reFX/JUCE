@@ -460,7 +460,7 @@ void TableHeaderComponent::restoreFromString (const String& storedVersion)
             if (auto* ci = getInfoForId (tabId))
             {
                 columns.move (columns.indexOf (ci), index);
-                ci->width = col->getIntAttribute ("width");
+                ci->width = jlimit (ci->minimumWidth, ci->maximumWidth, col->getIntAttribute ("width"));
                 setColumnVisible (tabId, col->getBoolAttribute ("visible"));
             }
 
