@@ -2683,7 +2683,7 @@ protected:
                 if (auto fill = colourLayer->colour)
                     stack->setFillType (*fill);
 
-                stack->fillEdgeTable (colourLayer->clip, drawPosition.x, (int) drawPosition.y);
+                stack->fillEdgeTable (colourLayer->clip, drawPosition.x, roundToInt (drawPosition.y));
             }
             else if (auto* imageLayer = std::get_if<ImageLayer> (&layer.layer))
             {
