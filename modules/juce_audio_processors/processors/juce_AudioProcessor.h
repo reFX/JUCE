@@ -1488,9 +1488,6 @@ protected:
     /** @internal */
     std::atomic<AudioPlayHead*> playHead { nullptr };
 
-    /** @internal */
-    void sendParamChangeMessageToListeners (int parameterIndex, float newValue);
-
 public:
     /** @cond */
     // These methods are all deprecated in favour of using AudioProcessorParameter
@@ -1511,9 +1508,6 @@ public:
     [[deprecated]] virtual bool isParameterAutomatable (int parameterIndex) const;
     [[deprecated]] virtual bool isMetaParameter (int parameterIndex) const;
     [[deprecated]] virtual AudioProcessorParameter::Category getParameterCategory (int parameterIndex) const;
-    [[deprecated]] void beginParameterChangeGesture (int parameterIndex);
-    [[deprecated]] void endParameterChangeGesture (int parameterIndex);
-    [[deprecated]] void setParameterNotifyingHost (int parameterIndex, float newValue);
 
     // These functions are deprecated: your audio processor can inform the host
     // on its bus and channel layouts and names using the AudioChannelSet and various bus classes.
@@ -1526,6 +1520,31 @@ public:
     [[deprecated]] virtual bool isInputChannelStereoPair  (int index) const;
     [[deprecated]] virtual bool isOutputChannelStereoPair (int index) const;
     /** @endcond */
+
+    /** @internal
+        Used to convert new-style per-parameter callbacks into old-style processor-change
+        callbacks.
+        This type will be removed in the future!
+    */
+    class ParameterChangeForwarder : public AudioProcessorParameter::Listener
+    {
+    public:
+        explicit ParameterChangeForwarder (AudioProcessor* o) : owner (o) {}
+
+        ParameterChangeForwarder (const ParameterChangeForwarder& other) : owner (other.owner) {}
+
+        ParameterChangeForwarder& operator= (const ParameterChangeForwarder& other)
+        {
+            owner = other.owner;
+            return *this;
+        }
+
+        void parameterValueChanged (int, float) override;
+        void parameterGestureChanged (int, bool) override;
+
+    private:
+        AudioProcessor* owner = nullptr;
+    };
 
 private:
     //==============================================================================
@@ -1599,6 +1618,8 @@ private:
     AudioProcessorParameterGroup parameterTree;
     Array<AudioProcessorParameter*> flatParameterList;
 
+    ParameterChangeForwarder parameterListener { this };
+
     AudioProcessorParameter* getParamChecked (int) const;
 
   #if JUCE_DEBUG
@@ -1626,7 +1647,6 @@ private:
     template <typename floatType>
     void processBypassed (AudioBuffer<floatType>&, MidiBuffer&);
 
-    friend class AudioProcessorParameter;
     friend class LADSPAPluginInstance;
 
     [[deprecated ("This method is no longer used - you can delete it from your AudioProcessor classes.")]]
