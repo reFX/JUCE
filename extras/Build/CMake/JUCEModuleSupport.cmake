@@ -68,9 +68,7 @@ endfunction()
 
 if((CMAKE_SYSTEM_NAME STREQUAL "Windows")
    OR (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-   OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD")
-   OR MSYS
-   OR MINGW)
+   OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
     # If you really need to override the detected arch for some reason,
     # you can configure the build with -DJUCE_TARGET_ARCHITECTURE=<custom arch>
     if(NOT DEFINED JUCE_TARGET_ARCHITECTURE)
@@ -104,20 +102,11 @@ endfunction()
 # ==================================================================================================
 
 function(_juce_add_standard_defs juce_target)
-
-  get_cmake_property (debug_configs DEBUG_CONFIGURATIONS)
-
-  if(NOT debug_configs)
-    set (debug_configs Debug)
-  endif()
-
-  list (JOIN debug_configs "," debug_configs)
-
-  target_compile_definitions ("${juce_target}" INTERFACE
-    JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-    $<IF:$<CONFIG:${debug_configs}>,DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
-    $<$<PLATFORM_ID:Android>:JUCE_ANDROID=1>)
-
+    _juce_get_debug_config_genex(debug_config)
+    target_compile_definitions(${juce_target} INTERFACE
+        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+        $<IF:${debug_config},DEBUG=1 _DEBUG=1,NDEBUG=1 _NDEBUG=1>
+        $<$<PLATFORM_ID:Android>:JUCE_ANDROID=1>)
 endfunction()
 
 # ==================================================================================================
@@ -162,7 +151,6 @@ function(_juce_extract_metadata_block delim_str file_with_block out_dict)
     set(append NO)
 
     foreach(line IN LISTS module_header_contents)
-        string(REPLACE "\t" " " line "${line}")
         if(NOT append)
             if(line MATCHES "[\t ]*BEGIN_${delim_str}[\t ]*")
                 set(append YES)
@@ -541,19 +529,19 @@ function(juce_add_module module_path)
         endif()
     endif()
 
-    if(${module_name} STREQUAL "juce_audio_processors")
+    if(${module_name} STREQUAL "juce_audio_processors_headless")
         add_library(juce_vst3_headers INTERFACE)
 
         target_compile_definitions(juce_vst3_headers INTERFACE "$<$<TARGET_EXISTS:juce_vst3_sdk>:JUCE_CUSTOM_VST3_SDK=1>")
 
         target_include_directories(juce_vst3_headers INTERFACE
             "$<$<TARGET_EXISTS:juce_vst3_sdk>:$<TARGET_PROPERTY:juce_vst3_sdk,INTERFACE_INCLUDE_DIRECTORIES>>"
-            "$<$<NOT:$<TARGET_EXISTS:juce_vst3_sdk>>:${base_path}/juce_audio_processors/format_types/VST3_SDK>")
+            "$<$<NOT:$<TARGET_EXISTS:juce_vst3_sdk>>:${base_path}/juce_audio_processors_headless/format_types/VST3_SDK>")
 
-        target_link_libraries(juce_audio_processors INTERFACE juce_vst3_headers)
+        target_link_libraries(juce_audio_processors_headless INTERFACE juce_vst3_headers)
 
         add_library(juce_lilv_headers INTERFACE)
-        set(lv2_base_path "${base_path}/juce_audio_processors/format_types/LV2_SDK")
+        set(lv2_base_path "${base_path}/juce_audio_processors_headless/format_types/LV2_SDK")
         target_include_directories(juce_lilv_headers INTERFACE
             "${lv2_base_path}"
             "${lv2_base_path}/lv2"
@@ -563,14 +551,14 @@ function(juce_add_module module_path)
             "${lv2_base_path}/sratom"
             "${lv2_base_path}/lilv"
             "${lv2_base_path}/lilv/src")
-        target_link_libraries(juce_audio_processors INTERFACE juce_lilv_headers)
+        target_link_libraries(juce_audio_processors_headless INTERFACE juce_lilv_headers)
 
         add_library(juce_ara_headers INTERFACE)
 
         target_include_directories(juce_ara_headers INTERFACE
             "$<$<TARGET_EXISTS:juce_ara_sdk>:$<TARGET_PROPERTY:juce_ara_sdk,INTERFACE_INCLUDE_DIRECTORIES>>")
 
-        target_link_libraries(juce_audio_processors INTERFACE juce_ara_headers)
+        target_link_libraries(juce_audio_processors_headless INTERFACE juce_ara_headers)
 
         if(JUCE_ARG_ALIAS_NAMESPACE)
             add_library(${JUCE_ARG_ALIAS_NAMESPACE}::juce_vst3_headers ALIAS juce_vst3_headers)
@@ -659,17 +647,11 @@ function(juce_add_module module_path)
         _juce_link_libs_from_metadata("${module_name}" "${metadata_dict}" linuxLibs)
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
         if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
-            if(module_name MATCHES "juce_gui_basics|juce_audio_processors|juce_core|juce_graphics")
+            if(module_name MATCHES "juce_gui_basics|juce_audio_processors|juce_core|juce_graphics|juce_audio_processors_headless")
                 target_compile_options(${module_name} INTERFACE /bigobj)
             endif()
 
             _juce_link_libs_from_metadata("${module_name}" "${metadata_dict}" windowsLibs)
-        elseif(MSYS OR MINGW)
-            if(module_name STREQUAL "juce_gui_basics")
-                target_compile_options(${module_name} INTERFACE "-Wa,-mbig-obj")
-            endif()
-
-            _juce_link_libs_from_metadata("${module_name}" "${metadata_dict}" mingwLibs)
         endif()
     endif()
 
