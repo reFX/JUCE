@@ -950,6 +950,23 @@ namespace WavFileHelpers
     };
 
     //==============================================================================
+    struct SerumChunk
+    {
+        static MemoryBlock createFrom (const StringMap& values)
+        {
+            MemoryBlock data;
+
+            auto itr = values.find ("xferSamplesPerFrame");
+            if (itr != values.cend())
+            {
+                auto str = juce::String::formatted ("<!>%d 10000000 wavetable (www.xferrecords.com)", itr->second.getTrailingIntValue());
+                data.append (str.toRawUTF8(), str.getNumBytesAsUTF8());
+            }
+            return data;
+        }
+    };
+
+    //==============================================================================
     namespace IXMLChunk
     {
         static const std::unordered_set<String> aswgMetadataKeys
@@ -1472,7 +1489,7 @@ public:
                         str = str.substring (3);
 
                         dict["xferSamplesPerFrame"] = str.upToFirstOccurrenceOf (" ", false, false);
-                        dict["xferInterpolation"]     = str.fromFirstOccurrenceOf (" ", false, false).substring (0, 1);
+                        dict["xferInterpolation"]   = str.fromFirstOccurrenceOf (" ", false, false).substring (0, 1);
                         dict["xferFactory"]         = str.fromFirstOccurrenceOf (" ", false, false).substring (1, 2);
                     }
                 }
@@ -1632,6 +1649,7 @@ public:
             listInfoChunk = ListInfoChunk::createFrom (metadataValues);
             acidChunk     = AcidChunk::createFrom (metadataValues);
             trckChunk     = TracktionChunk::createFrom (metadataValues);
+            serumChunk    = SerumChunk::createFrom (metadataValues);
         }
 
         headerPosition = out->getPosition();
@@ -1694,7 +1712,7 @@ public:
     }
 
 private:
-    MemoryBlock tempBlock, bwavChunk, ixmlChunk, axmlChunk, smplChunk, instChunk, cueChunk, listChunk, listInfoChunk, acidChunk, trckChunk;
+    MemoryBlock tempBlock, bwavChunk, ixmlChunk, axmlChunk, smplChunk, instChunk, cueChunk, listChunk, listInfoChunk, acidChunk, trckChunk, serumChunk;
     uint64 lengthInSamples = 0, bytesWritten = 0;
     int64 headerPosition = 0;
     bool writeFailed = false;
@@ -1733,6 +1751,7 @@ private:
                                        + chunkSize (listInfoChunk)
                                        + chunkSize (acidChunk)
                                        + chunkSize (trckChunk)
+                                       + chunkSize (serumChunk)
                                        + (8 + 28)); // (ds64 chunk)
 
         riffChunkSize += (riffChunkSize & 1);
@@ -1820,6 +1839,7 @@ private:
         writeChunk (listInfoChunk, chunkName ("LIST"));
         writeChunk (acidChunk,     chunkName ("acid"));
         writeChunk (trckChunk,     chunkName ("Trkn"));
+        writeChunk (serumChunk,    chunkName ("clm "));
 
         writeChunkHeader (chunkName ("data"), isRF64 ? -1 : (int) (lengthInSamples * bytesPerFrame));
     }
