@@ -208,7 +208,7 @@ public:
     static StringArray getMachineIdentifiers (MachineIdFlags flags);
 
     //==============================================================================
-    // CPU and memory information..
+    // CPU and memory information
 
     /** Returns the number of logical CPU cores. */
     static int getNumCpus() noexcept;

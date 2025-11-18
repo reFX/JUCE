@@ -585,7 +585,7 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
 
             flags.hasHeavyweightPeerFlag = false;
             Desktop::getInstance().removeDesktopComponent (this);
-            internalHierarchyChanged(); // give comps a chance to react to the peer change before the old peer is deleted.
+            internalHierarchyChanged(); // give comps a chance to react to the peer change before the old peer is deleted
 
             if (safePointer == nullptr)
                 return;
@@ -835,7 +835,7 @@ void Component::toBehind (Component* other)
 {
     if (other != nullptr && other != this)
     {
-        // the two components must belong to the same parent..
+        // the two components must belong to the same parent
         jassert (parentComponent == other->parentComponent);
 
         if (parentComponent != nullptr)
@@ -997,7 +997,7 @@ void Component::setBounds (int x, int y, int w, int h)
 
         if (showing)
         {
-            // send a fake mouse move to trigger enter/exit messages if needed..
+            // send a fake mouse move to trigger enter/exit messages if needed
             sendFakeMouseMove();
 
             if (! flags.hasHeavyweightPeerFlag)
@@ -1560,7 +1560,7 @@ void Component::internalHierarchyChanged()
         if (checker.shouldBailOut())
         {
             // you really shouldn't delete the parent component during a callback telling you
-            // that it's changed..
+            // that it's changed
             jassertfalse;
             return;
         }
@@ -1939,7 +1939,7 @@ void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel, Opaque
 {
     // If sizing a top-level-window and the OS paint message is delivered synchronously
     // before resized() is called, then we'll invoke the callback here, to make sure
-    // the components inside have had a chance to sort their sizes out..
+    // the components inside have had a chance to sort their sizes out.
    #if JUCE_DEBUG
     if (! flags.isInsidePaintCall) // (avoids an assertion in plugins hosted in WaveLab)
    #endif
@@ -2412,10 +2412,10 @@ void Component::internalMouseDown (SafePointer<Component> target,
             return;
 
         // If processing the input attempt has exited the modal loop, we'll allow the event
-        // to be delivered..
+        // to be delivered.
         if (target->isCurrentlyBlockedByAnotherModalComponent())
         {
-            // allow blocked mouse-events to go to global listeners..
+            // allow blocked mouse-events to go to global listeners
             desktop.getMouseListeners().callChecked (checker, [&] (MouseListener& l) { l.mouseDown (checker.eventWithNearestParent()); });
             return;
         }
@@ -2542,7 +2542,7 @@ void Component::internalMouseMove (SafePointer<Component> target, MouseInputSour
 
     if (target->isCurrentlyBlockedByAnotherModalComponent())
     {
-        // allow blocked mouse-events to go to global listeners..
+        // allow blocked mouse-events to go to global listeners
         desktop.sendMouseMove();
     }
     else
@@ -2590,7 +2590,7 @@ void Component::internalMouseWheel (SafePointer<Component> target, MouseInputSou
 
     if (target->isCurrentlyBlockedByAnotherModalComponent())
     {
-        // allow blocked mouse-events to go to global listeners..
+        // allow blocked mouse-events to go to global listeners
         desktop.mouseListeners.callChecked (checker, [&] (MouseListener& l) { l.mouseWheelMove (me, wheel); });
     }
     else
@@ -2627,7 +2627,7 @@ void Component::internalMagnifyGesture (SafePointer<Component> target, MouseInpu
 
     if (target->isCurrentlyBlockedByAnotherModalComponent())
     {
-        // allow blocked mouse-events to go to global listeners..
+        // allow blocked mouse-events to go to global listeners
         desktop.mouseListeners.callChecked (checker, [&] (MouseListener& l) { l.mouseMagnify (me, amount); });
     }
     else
@@ -2682,7 +2682,7 @@ void Component::internalBroughtToFront()
         return;
 
     // When brought to the front and there's a modal component blocking this one,
-    // we need to bring the modal one to the front instead..
+    // we need to bring the modal one to the front instead.
     if (auto* cm = getCurrentlyModalComponent())
         if (cm->getTopLevelComponent() != getTopLevelComponent())
             ModalComponentManager::getInstance()->bringModalComponentsToFront (false); // very important that this is false, otherwise in Windows,
