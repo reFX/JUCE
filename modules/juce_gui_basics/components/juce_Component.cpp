@@ -1970,14 +1970,11 @@ void Component::paintComponentAndChildren (Graphics& g, OpaqueLayer& opaqueLayer
     }
 
     Graphics::ScopedSaveState ss (g);
-<<<<<<< HEAD
     START_PAINT ();
-=======
 
     if (! isPaintingUnclipped())
         g.reduceClipRegion (getLocalBounds());
 
->>>>>>> develop_patched
     paintOverChildren (g);
     END_PAINT ( *this );
 }
