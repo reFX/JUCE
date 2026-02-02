@@ -3578,7 +3578,7 @@ public:
             processParameterChanges (*data.inputParameterChanges);
 
        #if JucePlugin_WantsMidiInput
-        if (isMidiInputBusEnabled && data.inputEvents != nullptr)
+        if (/*isMidiInputBusEnabled &&*/ data.inputEvents != nullptr)
             MidiEventList::toMidiBuffer (midiBuffer, *data.inputEvents);
        #endif
 
