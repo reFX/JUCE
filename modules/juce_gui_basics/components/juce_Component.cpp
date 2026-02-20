@@ -2195,6 +2195,15 @@ void Component::removeColour (int colourID)
         colourChanged();
 }
 
+void Component::removeAllColours()
+{
+	colours.clear();
+
+    for (int i = properties.size(); --i >= 0;)
+        if (properties.getName (i).toString().startsWith ("jcclr_"))
+            properties.remove (properties.getName (i));
+}
+
 void Component::setColour (int colourID, Colour colour)
 {
 	colours.add ({colourID, colour});
