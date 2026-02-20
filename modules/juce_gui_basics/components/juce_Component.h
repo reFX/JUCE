@@ -2352,6 +2352,11 @@ public:
     */
     bool isColourSpecified (int colourID, bool inheritFromParent = false) const;
 
+    /** Removes all colours that have been set with setColour().
+        This clears both the colour cache and the underlying properties.
+    */
+    void removeAllColours();
+
     /** This looks for any colours that have been specified for this component,
         and copies them to the specified target component.
     */
