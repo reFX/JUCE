@@ -317,6 +317,7 @@ struct var::VariantType
     // object ======================================================================
     static String objectToString (const ValueUnion& data)
     {
+		jassertfalse; // you probably meant to do juce::JSON::toString
         return "Object 0x" + String::toHexString ((int) (pointer_sized_int) data.objectValue);
     }
 
