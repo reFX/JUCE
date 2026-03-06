@@ -2514,7 +2514,7 @@ public:
     /** Returns the object that was set by setCachedComponentImage().
         @see setCachedComponentImage
     */
-    CachedComponentImage* getCachedComponentImage() const noexcept      { return cachedImage.get(); }
+    CachedComponentImage* getCachedComponentImage() const noexcept;
 
     /** Invalidates cached images, both in the CachedComponentImage (if any) and the image effect state. */
     void invalidateCachedImageResources();
@@ -2664,19 +2664,10 @@ private:
     String componentName, componentID, componentTitle, componentDescription, componentHelpText;
     Component* parentComponent = nullptr;
     Rectangle<int> boundsRelativeToParent;
-    std::unique_ptr<Positioner> positioner;
-    std::unique_ptr<AffineTransform> affineTransform;
     Array<Component*> childComponentList;
     WeakReference<LookAndFeel> lookAndFeel;
     MouseCursor cursor;
 
-    class EffectState;
-    std::unique_ptr<EffectState> effectState;
-    std::unique_ptr<CachedComponentImage> cachedImage;
-
-    class MouseListenerList;
-    std::unique_ptr<MouseListenerList> mouseListeners;
-    std::unique_ptr<Array<KeyListener*>> keyListeners;
     ListenerList<ComponentListener> componentListeners;
     NamedValueSet properties;
 
@@ -2694,7 +2685,10 @@ private:
     friend class WeakReference<Component>;
     WeakReference<Component>::Master masterReference;
 
-    std::unique_ptr<AccessibilityHandler> accessibilityHandler;
+    class EffectState;
+    class MouseListenerList;
+    class Data;
+    std::unique_ptr<Data> componentData;
 
     struct ComponentFlags
     {
@@ -2758,9 +2752,9 @@ private:
     void internalRepaintUnchecked (Rectangle<int>, bool);
     Component* removeChildComponent (int index, bool sendParentEvents, bool sendChildEvents);
     void reorderChildInternal (int sourceIndex, int destIndex);
-    void paintEntireComponent (Graphics&, bool, OpaqueLayer&);
-    void paintComponentAndChildren (Graphics&, OpaqueLayer&);
-    void paintWithinParentContext (Graphics&, OpaqueLayer&);
+    void paintEntireComponent (Graphics&, bool, OpaqueLayer&, ComponentPaintDiagnostics&);
+    void paintComponentAndChildren (Graphics&, OpaqueLayer&, ComponentPaintDiagnostics&);
+    void paintWithinParentContext (Graphics&, OpaqueLayer&, ComponentPaintDiagnostics&);
     void sendMovedResizedMessages (bool wasMoved, bool wasResized);
     void sendMovedResizedMessagesIfPending();
     void repaintParent();
@@ -2770,8 +2764,8 @@ private:
     void giveAwayKeyboardFocusInternal (bool sendFocusLossEvent);
     void sendEnablementChangeMessage();
     void sendVisibilityChangeMessage();
-
-    friend struct detail::ComponentHelpers;
+    Data& createDataIfNeeded();
+    const Array<KeyListener*>* getKeyListeners() const;
 
     /* Components aren't allowed to have copy constructors, as this would mess up parent hierarchies.
        You might need to give your subclasses a private dummy constructor to avoid compiler warnings.
