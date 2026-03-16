@@ -1554,6 +1554,8 @@ public:
     };
 
 private:
+    friend class AudioPluginInstance;
+
     //==============================================================================
     struct InOutChannelPair
     {
