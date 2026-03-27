@@ -293,7 +293,15 @@ public:
     };
 
     /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
-    virtual Font defaultFontWithHeight (FontWeight w, float height) { return defaultFonts[w].withHeight(height); }
+    virtual Font defaultFontWithHeight (FontWeight w, float height)
+	{
+		if (defaultFonts.contains (w))
+			return defaultFonts.at (w).withHeight (height);
+
+		auto f = juce::Font (juce::FontOptions()).withHeight (height);
+		defaultFonts.insert ({w, f});
+		return f;
+	}
 
     /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
     virtual Font defaultFontWithHeight (float height)   { return defaultFontWithHeight(FontWeight::regular, height); }
