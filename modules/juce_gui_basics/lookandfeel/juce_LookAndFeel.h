@@ -295,7 +295,7 @@ public:
     /** Default font for drawing in a given size. This is a reFX addition, so JUCE Components won't use this */
     virtual Font defaultFontWithHeight (FontWeight w, float height)
 	{
-		if (defaultFonts.contains (w))
+		if (defaultFonts.count (w) > 0)
 			return defaultFonts.at (w).withHeight (height);
 
 		auto f = juce::Font (juce::FontOptions()).withHeight (height);
