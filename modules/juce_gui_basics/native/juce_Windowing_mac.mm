@@ -524,20 +524,18 @@ static Image createNSWindowSnapshot (NSWindow* nsWindow)
         // that framework is only available from macOS 12.3 onwards.
         // A suitable @available check should be added once the minimum build OS is 12.3 or greater,
         // so that ScreenCaptureKit can be weak-linked.
-       #if defined (MAC_OS_VERSION_14_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_14_0
-        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
-        #define JUCE_DEPRECATION_IGNORED 1
-       #endif
+        // Use dlsym to avoid the hard unavailability error on macOS 15+ SDKs
+        typedef CGImageRef (*CGWindowListCreateImageFn)(CGRect, CGWindowListOption, CGWindowID, CGWindowImageOption);
+        static auto fn = (CGWindowListCreateImageFn) dlsym (RTLD_DEFAULT, "CGWindowListCreateImage");
 
-        CGImageRef screenShot = CGWindowListCreateImage (CGRectNull,
-                                                         kCGWindowListOptionIncludingWindow,
-                                                         (CGWindowID) [nsWindow windowNumber],
-                                                         kCGWindowImageBoundsIgnoreFraming);
+        CGImageRef screenShot = fn != nullptr ? fn (CGRectNull,
+                                                    kCGWindowListOptionIncludingWindow,
+                                                    (CGWindowID) [nsWindow windowNumber],
+                                                    kCGWindowImageBoundsIgnoreFraming)
+                                              : nullptr;
 
-       #if JUCE_DEPRECATION_IGNORED
-        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-        #undef JUCE_DEPRECATION_IGNORED
-       #endif
+        if (screenShot == nullptr)
+            return {};
 
         NSBitmapImageRep* bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage: screenShot];
 
