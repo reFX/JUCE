@@ -433,6 +433,12 @@ void MessageManager::doPlatformSpecificShutdown()
 bool MessageManager::postMessageToSystemQueue (MessageBase* message)
 {
     jassert (appDelegate != nil);
+
+    // Background threads (e.g. the timer thread) can still be posting while
+    // doPlatformSpecificShutdown has already torn down the delegate
+    if (appDelegate == nullptr)
+        return false;
+
     appDelegate->messageQueue.post (message);
     return true;
 }
