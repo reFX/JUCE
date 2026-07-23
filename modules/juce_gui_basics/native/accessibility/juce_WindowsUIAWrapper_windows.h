@@ -124,7 +124,12 @@ private:
 
     ~WindowsUIAWrapper()
     {
-        disconnectAllProviders();
+        // UiaDisconnectAllProviders is process-wide: in a plugin it would also tear down
+        // providers owned by the host or other plugins (possibly already unloaded) and
+        // can service reentrant UIA RPCs while our DLL is unloading. Our own providers
+        // are disconnected individually in ~AccessibilityNativeImpl.
+        if (JUCEApplicationBase::isStandaloneApp())
+            disconnectAllProviders();
 
         if (uiaHandle != nullptr)
             ::FreeLibrary (uiaHandle);

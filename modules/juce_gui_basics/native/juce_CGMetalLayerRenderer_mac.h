@@ -128,6 +128,12 @@ public:
 
         auto sharedTexture = resources->getSharedTexture();
 
+        if (sharedTexture == nullptr)
+        {
+            jassertfalse;
+            return dirtyRegions;
+        }
+
         auto encodeBlit = [] (id<MTLCommandBuffer> commandBuffer,
                               id<MTLTexture> source,
                               id<MTLTexture> destination)
@@ -152,6 +158,14 @@ public:
                 id<MTLCommandBuffer> commandBuffer = [commandQueue.get() commandBuffer];
 
                 id<CAMetalDrawable> drawable = [layer nextDrawable];
+
+                // nextDrawable times out and returns nil when the window is occluded,
+                // the layer is resized mid-frame or the system is under memory pressure.
+                // Blitting to a nil texture crashes inside the Metal driver, so report
+                // the whole region as not drawn and retry next frame.
+                if (drawable == nullptr)
+                    return dirtyRegions;
+
                 encodeBlit (commandBuffer, sharedTexture, drawable.texture);
 
                 [commandBuffer commit];
@@ -180,6 +194,10 @@ public:
                 @autoreleasepool
                 {
                     id<CAMetalDrawable> drawable = [layer nextDrawable];
+
+                    // See the comment in the synchronous path: nextDrawable can return nil
+                    if (drawable == nullptr)
+                        return;
 
                     id<MTLCommandBuffer> presentationCommandBuffer = [commandQueue.get() commandBuffer];
 
