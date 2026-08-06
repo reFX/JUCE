@@ -3027,6 +3027,50 @@ public:
     {
         if (auto vst2State = VST3::tryVst2StateLoad (*state))
         {
+            if (vst2State->chunk.empty() && ! vst2State->programs.empty())
+            {
+                // A parameter-format (non-chunk) VST2 state. Rebuild the fxb
+                // bank so that plugins which understand the VST2 preset format
+                // can restore it through setStateInformation.
+                constexpr auto ccnk = 0x43636e4b, fxbk = 0x4678426b, fxck = 0x4678436b;
+
+                std::int64_t total = 156;
+                for (const auto& prog : vst2State->programs)
+                    total += 56 + 4 * (std::int64_t) prog.values.size();
+
+                MemoryOutputStream fxb;
+                fxb.writeIntBigEndian (ccnk);
+                fxb.writeIntBigEndian ((int) (total - 8));
+                fxb.writeIntBigEndian (fxbk);
+                fxb.writeIntBigEndian (1);                                      // bank format version
+                fxb.writeIntBigEndian ((int) vst2State->fxUniqueID);
+                fxb.writeIntBigEndian ((int) vst2State->fxVersion);
+                fxb.writeIntBigEndian ((int) vst2State->programs.size());
+                fxb.writeIntBigEndian ((int) vst2State->currentProgram);
+                fxb.writeRepeatedByte (0, 124);                                 // future
+
+                for (const auto& prog : vst2State->programs)
+                {
+                    fxb.writeIntBigEndian (ccnk);
+                    fxb.writeIntBigEndian ((int) (56 + 4 * prog.values.size()) - 8);
+                    fxb.writeIntBigEndian (fxck);
+                    fxb.writeIntBigEndian (1);
+                    fxb.writeIntBigEndian ((int) vst2State->fxUniqueID);
+                    fxb.writeIntBigEndian ((int) vst2State->fxVersion);
+                    fxb.writeIntBigEndian ((int) prog.values.size());
+
+                    char name[28] = {};
+                    prog.name.copy (name, 27);
+                    fxb.write (name, 28);
+
+                    for (auto v : prog.values)
+                        fxb.writeFloatBigEndian (v);
+                }
+
+                setStateInformation (fxb.getData(), (int) fxb.getDataSize());
+                return true;
+            }
+
             setStateInformation (vst2State->chunk.data(), (int) vst2State->chunk.size());
             return true;
         }
