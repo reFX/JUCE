@@ -155,17 +155,12 @@ public:
         {
             @autoreleasepool
             {
-                id<MTLCommandBuffer> commandBuffer = [commandQueue.get() commandBuffer];
-
                 id<CAMetalDrawable> drawable = [layer nextDrawable];
 
-                // nextDrawable times out and returns nil when the window is occluded,
-                // the layer is resized mid-frame or the system is under memory pressure.
-                // Blitting to a nil texture crashes inside the Metal driver, so report
-                // the whole region as not drawn and retry next frame.
                 if (drawable == nullptr)
                     return dirtyRegions;
 
+                id<MTLCommandBuffer> commandBuffer = [commandQueue.get() commandBuffer];
                 encodeBlit (commandBuffer, sharedTexture, drawable.texture);
 
                 [commandBuffer commit];
@@ -195,7 +190,6 @@ public:
                 {
                     id<CAMetalDrawable> drawable = [layer nextDrawable];
 
-                    // See the comment in the synchronous path: nextDrawable can return nil
                     if (drawable == nullptr)
                         return;
 
