@@ -32,6 +32,11 @@
   ==============================================================================
 */
 
+// Newer Windows SDKs no longer pull <process.h> in transitively via <windows.h>,
+// so _beginthreadex / _endthreadex (used below) would be undeclared on a clean
+// build with the current toolchain. Include it explicitly.
+#include <process.h>
+
 namespace juce
 {
 
