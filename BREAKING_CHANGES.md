@@ -1,6 +1,6 @@
 # JUCE breaking changes
 
-# develop
+# Version 9.0.2
 
 ## Change
 
