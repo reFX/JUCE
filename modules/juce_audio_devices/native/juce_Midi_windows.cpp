@@ -2996,16 +2996,17 @@ struct WindowsMidiHelpers
             bool send (ump::Iterator b, ump::Iterator e)
             {
                 const ScopedLock lock { mutex };
+                bool sendSucceeded = true;
 
                 for (const auto& view : makeRange (b, e))
                 {
                     toBytestream.convert (view, 0, [&] (ump::BytesOnGroup bytesView, double)
                     {
-                        sendBytestream (bytesView.bytes);
+                        sendSucceeded &= sendBytestream (bytesView.bytes);
                     });
                 }
 
-                return true;
+                return sendSucceeded;
             }
 
             void addDisconnectListener (ump::DisconnectionListener& l)
@@ -3179,10 +3180,10 @@ struct WindowsMidiHelpers
                 allOutputs().add (*this);
             }
 
-            void sendBytestream (Span<const std::byte> message)
+            [[nodiscard]] bool sendBytestream (Span<const std::byte> message)
             {
                 if (message.empty())
-                    return;
+                    return true;
 
                 if (message.size() > 3 || message[0] == std::byte { 0xf0 })
                 {
@@ -3192,22 +3193,16 @@ struct WindowsMidiHelpers
                     // time, so it's acceptable under the circumstances.
                     if (! sysexOutputHandle->trySend (handle, message))
                         doneUpdater.timeOut (std::exchange (sysexOutputHandle, std::make_unique<SysexOutputHandle>()));
-                }
-                else
-                {
-                    const auto msg = ByteOrder::makeInt (0 < message.size() ? (uint8_t) message[0] : 0,
-                                                         1 < message.size() ? (uint8_t) message[1] : 0,
-                                                         2 < message.size() ? (uint8_t) message[2] : 0,
-                                                         0);
 
-                    for (int i = 0; i < 50; ++i)
-                    {
-                        if (midiOutShortMsg (handle, msg) != MIDIERR_NOTREADY)
-                            break;
-
-                        Sleep (1);
-                    }
+                    return true;
                 }
+
+                const auto msg = ByteOrder::makeInt (0 < message.size() ? (uint8_t) message[0] : 0,
+                                                     1 < message.size() ? (uint8_t) message[1] : 0,
+                                                     2 < message.size() ? (uint8_t) message[2] : 0,
+                                                     0);
+
+                return midiOutShortMsg (handle, msg) == MMSYSERR_NOERROR;
             }
 
             static void CALLBACK midiOutCallback (HMIDIOUT,
