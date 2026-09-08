@@ -2763,14 +2763,121 @@ struct WindowsMidiHelpers
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InputDevice)
         };
 
-        class OutputDevice : private AsyncUpdater
+        class SysexOutputHandle
         {
         public:
-            ~OutputDevice() override
+            ~SysexOutputHandle()
+            {
+                // This output handle is still in use, missing call to clear()?
+                jassert ((midihdr.dwFlags & MHDR_PREPARED) == 0);
+            }
+
+            SysexOutputHandle() = default;
+
+            SysexOutputHandle (const SysexOutputHandle&) = delete;
+            SysexOutputHandle (SysexOutputHandle&&) = delete;
+
+            SysexOutputHandle& operator= (const SysexOutputHandle&) = delete;
+            SysexOutputHandle& operator= (SysexOutputHandle&&) = delete;
+
+            /*  Returns true if this object can be reused, or false otherwise.
+                Failure implies that the driver might still be holding onto a pointer to the
+                MIDIHDR, which in turn holds a pointer to the stored sysex buffer, so this
+                object should not be destroyed (yet). Call clear() later on to force the driver
+                to give up references to the buffer.
+            */
+            bool trySend (HMIDIOUT handle, Span<const std::byte> message)
+            {
+                storage.assign (message.begin(), message.end());
+
+                midihdr.lpData = (char*) storage.data();
+                midihdr.dwBytesRecorded = midihdr.dwBufferLength = (DWORD) storage.size();
+
+                if (midiOutPrepareHeader (handle, &midihdr, sizeof (MIDIHDR)) != MMSYSERR_NOERROR)
+                    return true;
+
+                if (midiOutLongMsg (handle, &midihdr, sizeof (MIDIHDR)) == MMSYSERR_NOERROR)
+                {
+                    const auto timeoutMs = (uint32) (5000 + storage.size());
+                    const auto start = Time::getMillisecondCounter();
+
+                    while ((midihdr.dwFlags & MHDR_DONE) == 0)
+                    {
+                        if (Time::getMillisecondCounter() - start >= timeoutMs)
+                            return false;
+
+                        Sleep (1);
+                    }
+                }
+
+                return unprepare (handle);
+            }
+
+            /*  If this buffer is in use, forces the driver to stop using it and unprepares the
+                buffer. This should be called at some point before this object is destroyed.
+                Calls midiOutReset internally.
+
+                According to the docs, we must call midiOutputUnprepareHeader before destroying
+                the MIDIHDR and buffer, and we're not allowed to unprepare the header until
+                midiOutLongMsg is done with it. midiOutLongMsg might take a long time, or fail
+                completely in some cases.
+
+                midiOutReset can be used to force the device to give up references to pending
+                buffers, but it also has the side-effect of sending all-notes-off messages, which
+                is probably unwanted, so it should only be used as a last resort.
+            */
+            void clear (HMIDIOUT handle)
+            {
+                if ((midihdr.dwFlags & MHDR_PREPARED) == 0)
+                    return;
+
+                if ((midihdr.dwFlags & MHDR_DONE) == 0)
+                {
+                    [[maybe_unused]] const auto didReset = midiOutReset (handle) == MMSYSERR_NOERROR;
+                    // If this is hit, we failed to reset the output so the driver might still hold
+                    // a pointer to our storage buffer. Possible undefined behaviour after this point.
+                    jassert (didReset);
+                }
+
+                [[maybe_unused]] const auto didUnprepare = unprepare (handle);
+                // The driver doesn't want to give up references to the MIDI buffer, even though we
+                // just called midiOutReset, which is supposed to force the driver to do that.
+                jassert (didUnprepare);
+            }
+
+            const MIDIHDR* getKey() const { return &midihdr; }
+
+            bool done() const
+            {
+                return (midihdr.dwFlags & MHDR_DONE) != 0;
+            }
+
+        private:
+            bool unprepare (HMIDIOUT handle)
+            {
+                for (auto i = 0; i < 500; ++i)
+                {
+                    if (midiOutUnprepareHeader (handle, &midihdr, sizeof (MIDIHDR)) != MIDIERR_STILLPLAYING)
+                        return true;
+
+                    Sleep (2);
+                }
+
+                return false;
+            }
+
+            MIDIHDR midihdr{};
+            std::vector<std::byte> storage = std::vector<std::byte> (2048);
+        };
+
+        class OutputDevice
+        {
+        public:
+            ~OutputDevice()
             {
                 allOutputs().remove (*this);
 
-                cancelPendingUpdate();
+                sysexOutputHandle->clear (handle);
 
                 if (handle != nullptr)
                     midiOutClose (handle);
@@ -2811,6 +2918,132 @@ struct WindowsMidiHelpers
             }
 
         private:
+            class DisconnectUpdater : private AsyncUpdater
+            {
+            public:
+                explicit DisconnectUpdater (OutputDevice& x)
+                    : owner (x)
+                {
+                }
+
+                ~DisconnectUpdater() override
+                {
+                    cancelPendingUpdate();
+                }
+
+                using AsyncUpdater::triggerAsyncUpdate;
+
+            private:
+                void handleAsyncUpdate() override
+                {
+                    owner.disconnectListeners.call ([] (auto& x) { x.disconnected(); });
+                }
+
+                OutputDevice& owner;
+            };
+
+            class DoneUpdater : private AsyncUpdater
+            {
+            public:
+                explicit DoneUpdater (OutputDevice& x)
+                    : owner (x)
+                {
+                }
+
+                ~DoneUpdater() override
+                {
+                    for (auto& sysexOutput : timedOutHandles)
+                        sysexOutput.second->clear (owner.handle);
+
+                    cancelPendingUpdate();
+                }
+
+                /*  Called when a sysex buffer times out during sending.
+                    Although this might be called by a high-priority thread, we're not overly
+                    worried about locking/allocating here since the thread will already have been
+                    blocked waiting for the timeout.
+                */
+                void timeOut (std::unique_ptr<SysexOutputHandle> x)
+                {
+                    const auto* key = x->getKey();
+                    const ScopedLock lock { timedOutMutex };
+                    timedOutHandles.emplace (key, std::move (x));
+                }
+
+                /*  Called, potentially on a high priority thread, when a buffer is no longer in use. */
+                void done (const MIDIHDR* x)
+                {
+                    if (MessageManager::getInstance()->isThisTheMessageThread())
+                    {
+                        erase (x);
+                        return;
+                    }
+
+                    if (fifo.getFreeSpace() == 0)
+                        overflow = true;
+                    else
+                        fifo.write (1).forEach ([&] (auto index) { headerPtrs[(size_t) index] = x; });
+
+                    triggerAsyncUpdate();
+                }
+
+            private:
+                void handleAsyncUpdate() override
+                {
+                    if (overflow.exchange (false))
+                    {
+                        // If the queue overflowed, we dropped an update, so scan
+                        // through all timed-out buffers, and drain the queue so that we can
+                        // try to take the fast path next time.
+
+                        fifo.reset();
+
+                        const ScopedLock lock { timedOutMutex };
+
+                        for (auto it = timedOutHandles.begin(); it != timedOutHandles.end();)
+                        {
+                            it = std::invoke ([&]
+                            {
+                                if (it->second->done())
+                                {
+                                    it->second->clear (owner.handle);
+                                    return timedOutHandles.erase (it);
+                                }
+
+                                return std::next (it);
+                            });
+                        }
+                    }
+                    else
+                    {
+                        fifo.read (fifo.getNumReady()).forEach ([&] (auto index)
+                        {
+                            erase (headerPtrs[(size_t) index]);
+                        });
+                    }
+                }
+
+                void erase (const MIDIHDR* key)
+                {
+                    const ScopedLock lock { timedOutMutex };
+
+                    const auto iter = timedOutHandles.find (key);
+
+                    if (iter == timedOutHandles.end() || ! iter->second->done())
+                        return;
+
+                    iter->second->clear (owner.handle);
+                    timedOutHandles.erase (iter);
+                }
+
+                OutputDevice& owner;
+                std::map<const MIDIHDR*, std::unique_ptr<SysexOutputHandle>> timedOutHandles;
+                std::vector<const MIDIHDR*> headerPtrs = std::vector<const MIDIHDR*> (128);
+                AbstractFifo fifo { (int) headerPtrs.size() };
+                std::atomic<bool> overflow = false;
+                CriticalSection timedOutMutex;
+            };
+
             static std::unique_ptr<OutputDevice> openInternal (const ump::EndpointId& id)
             {
                 std::vector<ump::EndpointAndStaticInfo> endpoints;
@@ -2866,33 +3099,12 @@ struct WindowsMidiHelpers
 
                 if (message.size() > 3 || message[0] == std::byte { 0xf0 })
                 {
-                    MIDIHDR h = {};
-
-                    h.lpData = (char*) message.data();
-                    h.dwBytesRecorded = h.dwBufferLength  = (DWORD) message.size();
-
-                    if (midiOutPrepareHeader (handle, &h, sizeof (MIDIHDR)) == MMSYSERR_NOERROR)
-                    {
-                        auto res = midiOutLongMsg (handle, &h, sizeof (MIDIHDR));
-
-                        if (res == MMSYSERR_NOERROR)
-                        {
-                            while ((h.dwFlags & MHDR_DONE) == 0)
-                                Sleep (1);
-
-                            int count = 500; // 1 sec timeout
-
-                            while (--count >= 0)
-                            {
-                                res = midiOutUnprepareHeader (handle, &h, sizeof (MIDIHDR));
-
-                                if (res == MIDIERR_STILLPLAYING)
-                                    Sleep (2);
-                                else
-                                    break;
-                            }
-                        }
-                    }
+                    // If the sysex buffer can't be reclaimed, that implies it's still in use after
+                    // reaching a timeout. Although the line below allocates from a high-priority
+                    // thread, it'll only happen if the thread has already been blocked for a long
+                    // time, so it's acceptable under the circumstances.
+                    if (! sysexOutputHandle->trySend (handle, message))
+                        doneUpdater.timeOut (std::exchange (sysexOutputHandle, std::make_unique<SysexOutputHandle>()));
                 }
                 else
                 {
@@ -2911,20 +3123,10 @@ struct WindowsMidiHelpers
                 }
             }
 
-            void disconnected()
-            {
-                triggerAsyncUpdate();
-            }
-
-            void handleAsyncUpdate() override
-            {
-                disconnectListeners.call ([] (auto& x) { x.disconnected(); });
-            }
-
             static void CALLBACK midiOutCallback (HMIDIOUT,
                                                   UINT wMsg,
                                                   DWORD_PTR dwInstance,
-                                                  DWORD_PTR,
+                                                  DWORD_PTR param1,
                                                   DWORD_PTR)
             {
                 auto* collector = reinterpret_cast<OutputDevice*> (dwInstance);
@@ -2937,7 +3139,11 @@ struct WindowsMidiHelpers
                     switch (wMsg)
                     {
                         case MOM_CLOSE:
-                            l.disconnected();
+                            l.disconnectUpdater.triggerAsyncUpdate();
+                            break;
+
+                        case MOM_DONE:
+                            l.doneUpdater.done ((const MIDIHDR*) param1);
                             break;
                     }
                 });
@@ -2953,6 +3159,9 @@ struct WindowsMidiHelpers
             HMIDIOUT handle = nullptr;
             ListenerList<ump::DisconnectionListener> disconnectListeners;
             ump::ToBytestreamConverter toBytestream { 4096 };
+            std::unique_ptr<SysexOutputHandle> sysexOutputHandle = std::make_unique<SysexOutputHandle>();
+            DisconnectUpdater disconnectUpdater { *this };
+            DoneUpdater doneUpdater { *this };
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OutputDevice)
         };
