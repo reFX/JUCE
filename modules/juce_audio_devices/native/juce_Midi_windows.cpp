@@ -3079,34 +3079,20 @@ struct WindowsMidiHelpers
                     return {};
 
                 const auto deviceID = std::distance (endpoints.begin(), iter);
+                auto result = rawToUniquePtr (new OutputDevice (id));
 
-                for (auto i = 0; i < 4; ++i)
-                {
-                    auto result = rawToUniquePtr (new OutputDevice (id));
+                HMIDIOUT h = nullptr;
+                auto res = midiOutOpen (&h,
+                                        (UINT) deviceID,
+                                        (DWORD_PTR) &midiOutCallback,
+                                        (DWORD_PTR) result.get(),
+                                        CALLBACK_FUNCTION);
 
-                    HMIDIOUT h = nullptr;
-                    auto res = midiOutOpen (&h,
-                                            (UINT) deviceID,
-                                            (DWORD_PTR) &midiOutCallback,
-                                            (DWORD_PTR) result.get(),
-                                            CALLBACK_FUNCTION);
+                if (res != MMSYSERR_NOERROR)
+                    return {};
 
-                    switch (res)
-                    {
-                        case MMSYSERR_NOERROR:
-                            result->handle = h;
-                            return result;
-
-                        case MMSYSERR_ALLOCATED:
-                            Sleep (100);
-                            break;
-
-                        default:
-                            return {};
-                    }
-                }
-
-                return {};
+                result->handle = h;
+                return result;
             }
 
             explicit OutputDevice (const ump::EndpointId& x)
