@@ -885,8 +885,6 @@ public:
             projectGuid = createGUID (owner.getProject().getProjectUIDString() + getName());
         }
 
-        virtual ~MSVCTarget() = default;
-
         String getProjectVersionString() const     { return "10.00"; }
         String getProjectFileSuffix() const        { return ".vcxproj"; }
         String getFiltersFileSuffix() const        { return ".vcxproj.filters"; }
