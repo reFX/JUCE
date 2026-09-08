@@ -162,6 +162,8 @@ private:
 
         bool send (ump::Iterator b, ump::Iterator e)
         {
+            const ScopedLock lock { mutex };
+
             if (rawConnection == nullptr)
                 return false;
 
@@ -262,6 +264,8 @@ private:
         WaitFreeListeners<ump::Consumer> consumers;
         ListenerList<ump::DisconnectionListener> disconnectListeners;
         winrt::event_token inputToken, disconnectToken;
+
+        CriticalSection mutex;
     };
 
     class InputImplNative : public ump::Input::Impl::Native,
@@ -2991,6 +2995,8 @@ struct WindowsMidiHelpers
 
             bool send (ump::Iterator b, ump::Iterator e)
             {
+                const ScopedLock lock { mutex };
+
                 for (const auto& view : makeRange (b, e))
                 {
                     toBytestream.convert (view, 0, [&] (ump::BytesOnGroup bytesView, double)
@@ -3243,6 +3249,8 @@ struct WindowsMidiHelpers
             std::unique_ptr<SysexOutputHandle> sysexOutputHandle = std::make_unique<SysexOutputHandle>();
             DisconnectUpdater disconnectUpdater { *this };
             DoneUpdater doneUpdater { *this };
+
+            CriticalSection mutex;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OutputDevice)
         };
