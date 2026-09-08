@@ -305,6 +305,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPBlock.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPEndpoint.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPEndpointId.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -327,6 +330,9 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPSession.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPStaticDeviceInfo.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_devices\midi_io\ump\juce_UMPVirtualEndpoint.cpp">

@@ -69,6 +69,8 @@
 #include "midi_io/ump/juce_UMPLegacyVirtualOutput.cpp"
 #include "midi_io/ump/juce_UMPVirtualEndpoint.cpp"
 #include "midi_io/ump/juce_UMPSession.cpp"
+#include "midi_io/ump/juce_UMPEndpoint.cpp"
+#include "midi_io/ump/juce_UMPStaticDeviceInfo.cpp"
 #include "midi_io/ump/juce_UMPEndpoints.cpp"
 #include "midi_io/ump/juce_UMPEndpointId.cpp"
 
