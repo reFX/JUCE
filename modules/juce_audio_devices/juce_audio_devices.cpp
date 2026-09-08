@@ -107,6 +107,12 @@
 
 //==============================================================================
 #elif JUCE_WINDOWS
+ #include <cfgmgr32.h>
+
+ #if ! JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
+  #pragma comment (lib, "cfgmgr32.lib")
+ #endif
+
  #if JUCE_WASAPI
   #include <mmreg.h>
   #include "native/juce_WASAPI_windows.cpp"

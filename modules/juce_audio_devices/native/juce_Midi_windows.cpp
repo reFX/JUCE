@@ -3063,7 +3063,81 @@ struct WindowsMidiHelpers
             String name;
         };
 
-        class EndpointsImplNative : public ump::Endpoints::Impl::Native
+        struct MidiDeviceChangeDetectorDelegate
+        {
+            virtual ~MidiDeviceChangeDetectorDelegate() = default;
+            virtual void onMidiDeviceListChanged() = 0;
+        };
+
+        class MidiDeviceChangeDetector : private AsyncUpdater
+        {
+        public:
+            explicit MidiDeviceChangeDetector (MidiDeviceChangeDetectorDelegate& d)
+                : delegate (d)
+            {
+                constexpr GUID deviceInterfaceMidiInput  { 0x504be32c, 0xccf6, 0x4d2c, { 0xb7, 0x3f, 0x6f, 0x8b, 0x37, 0x47, 0xe2, 0x2b } };
+                constexpr GUID deviceInterfaceMidiOutput { 0x6dc23320, 0xab33, 0x4ce4, { 0x80, 0xd4, 0xbb, 0xb3, 0xeb, 0xbf, 0x28, 0x14 } };
+
+                for (const auto& midiInterface : { deviceInterfaceMidiInput, deviceInterfaceMidiOutput })
+                {
+                    CM_NOTIFY_FILTER filter{};
+                    filter.cbSize = sizeof (filter);
+                    filter.Flags = 0;
+                    filter.FilterType = CM_NOTIFY_FILTER_TYPE_DEVICEINTERFACE;
+                    filter.Reserved = 0;
+                    filter.u.DeviceInterface.ClassGuid = midiInterface;
+
+                    if (HCMNOTIFICATION notification{}; CM_Register_Notification (&filter, this, callback, &notification) == CR_SUCCESS)
+                    {
+                        notifications.push_back (notification);
+                    }
+                }
+            }
+
+            ~MidiDeviceChangeDetector() override
+            {
+                for (const auto& notification : notifications)
+                    CM_Unregister_Notification (notification);
+
+                cancelPendingUpdate();
+            }
+
+        private:
+            static __callback DWORD CALLBACK callback (HCMNOTIFICATION, PVOID context, CM_NOTIFY_ACTION, PCM_NOTIFY_EVENT_DATA, DWORD)
+            {
+                auto* self = static_cast<MidiDeviceChangeDetector*> (context);
+                self->triggerAsyncUpdate();
+                return ERROR_SUCCESS;
+            }
+
+            void handleAsyncUpdate() override
+            {
+                static constexpr auto totalNumExtraChecks = 4;
+                static constexpr auto initialIntervalMs = 500;
+
+                std::tie (numChecksRemaining, currentIntervalMs) = std::tuple (totalNumExtraChecks, initialIntervalMs);
+                timer.startTimer (currentIntervalMs);
+            }
+
+            MidiDeviceChangeDetectorDelegate& delegate;
+            std::vector<HCMNOTIFICATION> notifications;
+            int numChecksRemaining = 0;
+            int currentIntervalMs = 0;
+            TimedCallback timer { [this]
+            {
+                timer.stopTimer();
+
+                delegate.onMidiDeviceListChanged();
+
+                if (--numChecksRemaining <= 0)
+                    return;
+
+                timer.startTimer (currentIntervalMs *= 2);
+            } };
+        };
+
+        class EndpointsImplNative : public ump::Endpoints::Impl::Native,
+                                    private MidiDeviceChangeDetectorDelegate
         {
         public:
             ump::Backend getBackend() const override
@@ -3143,13 +3217,18 @@ struct WindowsMidiHelpers
                 jassert (cachedEndpoints.size() == buffer.size());
             }
 
+            void onMidiDeviceListChanged() override
+            {
+                const auto old = cachedEndpoints;
+                updateCachedEndpoints();
+
+                if (old != cachedEndpoints)
+                    listener.endpointsChanged();
+            }
+
             ump::EndpointsListener& listener;
             std::map<ump::EndpointId, ump::EndpointAndStaticInfo> cachedEndpoints;
-            DeviceChangeDetector detector { L"JuceMidiDeviceDetector_", [&]
-            {
-                updateCachedEndpoints();
-                listener.endpointsChanged();
-            } };
+            MidiDeviceChangeDetector detector { *this };
         };
     };
 };
