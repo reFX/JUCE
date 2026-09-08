@@ -277,9 +277,9 @@ namespace juce
   #include <winrt/Windows.Foundation.Collections.h>
   #include <winrt/Windows.Devices.Enumeration.h>
 
-  #include <winrt/Microsoft.Windows.Devices.Midi2.h>
-  #include <winrt/Microsoft.Windows.Devices.Midi2.Endpoints.Virtual.h>
-  #include <winmidi/init/Microsoft.Windows.Devices.Midi2.Initialization.hpp>
+  #include <winrt/Windows.Devices.Midi2.h>
+  #include <winrt/Windows.Devices.Midi2.Enumeration.h>
+  #include <winrt/Windows.Devices.Midi2.Transports.Virtual.h>
   JUCE_END_IGNORE_WARNINGS_MSVC
  #endif
 

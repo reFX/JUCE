@@ -43,9 +43,9 @@ namespace juce
 
 #if JUCE_USE_WINDOWS_MIDI_SERVICES
 
-namespace wm2 = winrt::Microsoft::Windows::Devices::Midi2;
-namespace wm2v = wm2::Endpoints::Virtual;
-namespace mwdmi = Microsoft::Windows::Devices::Midi2::Initialization;
+namespace wm2 = winrt::Windows::Devices::Midi2;
+namespace wm2e = wm2::Enumeration;
+namespace wm2v = wm2::Transports::Virtual;
 
 class MidiServices
 {
@@ -457,19 +457,19 @@ private:
                                                                                     Span<const ump::Block> blocks,
                                                                                     ump::BlocksAreStatic areStatic)
         {
-            wm2::MidiDeclaredEndpointInfo e;
-            e.Name = name.toWideCharPointer();
-            e.HasStaticFunctionBlocks = areStatic == ump::BlocksAreStatic::yes;
-            e.DeclaredFunctionBlockCount = (uint8_t) blocks.size();
-            e.ProductInstanceId = productInstance.toWideCharPointer();
-            e.SupportsMidi10Protocol = protocol == ump::PacketProtocol::MIDI_1_0;
-            e.SupportsMidi20Protocol = protocol == ump::PacketProtocol::MIDI_2_0;
-            e.SpecificationVersionMajor = 1;
-            e.SpecificationVersionMinor = 1;
-            e.SupportsReceivingJitterReductionTimestamps = false;
-            e.SupportsSendingJitterReductionTimestamps = false;
+            wm2e::MidiDeclaredEndpointInfo e;
+            e.Name (name.toWideCharPointer());
+            e.HasStaticFunctionBlocks (areStatic == ump::BlocksAreStatic::yes);
+            e.DeclaredFunctionBlockCount ((uint8_t) blocks.size());
+            e.ProductInstanceId (productInstance.toWideCharPointer());
+            e.SupportsMidi10Protocol (protocol == ump::PacketProtocol::MIDI_1_0);
+            e.SupportsMidi20Protocol (protocol == ump::PacketProtocol::MIDI_2_0);
+            e.SpecificationVersionMajor (1);
+            e.SpecificationVersionMinor (1);
+            e.SupportsReceivingJitterReductionTimestamps (false);
+            e.SupportsSendingJitterReductionTimestamps (false);
 
-            wm2v::MidiVirtualDeviceCreationConfig config { e.Name,
+            wm2v::MidiVirtualDeviceCreationConfig config { e.Name(),
                                                            ump::Endpoints::Impl::getGlobalMidiClientName().toWideCharPointer(),
                                                            L"",
                                                            e,
@@ -538,47 +538,47 @@ private:
         wm2::MidiSession session;
     };
 
-    static wm2::MidiFunctionBlock makeBlock (uint8_t index, const ump::Block& b)
+    static wm2e::MidiFunctionBlock makeBlock (uint8_t index, const ump::Block& b)
     {
         const auto direction = std::invoke ([&]
         {
             switch (b.getDirection())
             {
-                case ump::BlockDirection::bidirectional: return wm2::MidiFunctionBlockDirection::Bidirectional;
-                case ump::BlockDirection::sender:        return wm2::MidiFunctionBlockDirection::BlockOutput;
-                case ump::BlockDirection::receiver:      return wm2::MidiFunctionBlockDirection::BlockInput;
-                case ump::BlockDirection::unknown:       return wm2::MidiFunctionBlockDirection::Undefined;
+                case ump::BlockDirection::bidirectional: return wm2e::MidiFunctionBlockDirection::Bidirectional;
+                case ump::BlockDirection::sender:        return wm2e::MidiFunctionBlockDirection::BlockOutput;
+                case ump::BlockDirection::receiver:      return wm2e::MidiFunctionBlockDirection::BlockInput;
+                case ump::BlockDirection::unknown:       return wm2e::MidiFunctionBlockDirection::Undefined;
             }
 
-            return wm2::MidiFunctionBlockDirection{};
+            return wm2e::MidiFunctionBlockDirection{};
         });
 
         const auto hint = std::invoke ([&]
         {
             switch (b.getUiHint())
             {
-                case ump::BlockUiHint::bidirectional:   return wm2::MidiFunctionBlockUIHint::Bidirectional;
-                case ump::BlockUiHint::sender:          return wm2::MidiFunctionBlockUIHint::Sender;
-                case ump::BlockUiHint::receiver:        return wm2::MidiFunctionBlockUIHint::Receiver;
-                case ump::BlockUiHint::unknown:         return wm2::MidiFunctionBlockUIHint::Unknown;
+                case ump::BlockUiHint::bidirectional:   return wm2e::MidiFunctionBlockUIHint::Bidirectional;
+                case ump::BlockUiHint::sender:          return wm2e::MidiFunctionBlockUIHint::Sender;
+                case ump::BlockUiHint::receiver:        return wm2e::MidiFunctionBlockUIHint::Receiver;
+                case ump::BlockUiHint::unknown:         return wm2e::MidiFunctionBlockUIHint::Unknown;
             }
 
-            return wm2::MidiFunctionBlockUIHint{};
+            return wm2e::MidiFunctionBlockUIHint{};
         });
 
         const auto proxy = std::invoke ([&]
         {
             switch (b.getMIDI1ProxyKind())
             {
-                case ump::BlockMIDI1ProxyKind::inapplicable:                return wm2::MidiFunctionBlockRepresentsMidi10Connection::Not10;
-                case ump::BlockMIDI1ProxyKind::restrictedBandwidth:         return wm2::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthRestricted;
-                case ump::BlockMIDI1ProxyKind::unrestrictedBandwidth:       return wm2::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthUnrestricted;
+                case ump::BlockMIDI1ProxyKind::inapplicable:                return wm2e::MidiFunctionBlockRepresentsMidi10Connection::Not10;
+                case ump::BlockMIDI1ProxyKind::restrictedBandwidth:         return wm2e::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthRestricted;
+                case ump::BlockMIDI1ProxyKind::unrestrictedBandwidth:       return wm2e::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthUnrestricted;
             }
 
-            return wm2::MidiFunctionBlockRepresentsMidi10Connection{};
+            return wm2e::MidiFunctionBlockRepresentsMidi10Connection{};
         });
 
-        wm2::MidiFunctionBlock result;
+        wm2e::MidiFunctionBlock result;
         result.Name (b.getName().toWideCharPointer());
         result.Number (index);
         result.IsActive (b.isEnabled());
@@ -598,7 +598,7 @@ private:
         ump::Block block;
     };
 
-    static IndexedBlock makeBlock (const wm2::MidiFunctionBlock& b)
+    static IndexedBlock makeBlock (const wm2e::MidiFunctionBlock& b)
     {
         const auto index = b.Number();
 
@@ -606,10 +606,10 @@ private:
         {
             switch (b.Direction())
             {
-                case wm2::MidiFunctionBlockDirection::Bidirectional: return ump::BlockDirection::bidirectional;
-                case wm2::MidiFunctionBlockDirection::BlockOutput:   return ump::BlockDirection::sender;
-                case wm2::MidiFunctionBlockDirection::BlockInput:    return ump::BlockDirection::receiver;
-                case wm2::MidiFunctionBlockDirection::Undefined:     return ump::BlockDirection::unknown;
+                case wm2e::MidiFunctionBlockDirection::Bidirectional: return ump::BlockDirection::bidirectional;
+                case wm2e::MidiFunctionBlockDirection::BlockOutput:   return ump::BlockDirection::sender;
+                case wm2e::MidiFunctionBlockDirection::BlockInput:    return ump::BlockDirection::receiver;
+                case wm2e::MidiFunctionBlockDirection::Undefined:     return ump::BlockDirection::unknown;
             }
 
             return ump::BlockDirection{};
@@ -619,10 +619,10 @@ private:
         {
             switch (b.UIHint())
             {
-                case wm2::MidiFunctionBlockUIHint::Bidirectional:   return ump::BlockUiHint::bidirectional;
-                case wm2::MidiFunctionBlockUIHint::Sender:          return ump::BlockUiHint::sender;
-                case wm2::MidiFunctionBlockUIHint::Receiver:        return ump::BlockUiHint::receiver;
-                case wm2::MidiFunctionBlockUIHint::Unknown:         return ump::BlockUiHint::unknown;
+                case wm2e::MidiFunctionBlockUIHint::Bidirectional:   return ump::BlockUiHint::bidirectional;
+                case wm2e::MidiFunctionBlockUIHint::Sender:          return ump::BlockUiHint::sender;
+                case wm2e::MidiFunctionBlockUIHint::Receiver:        return ump::BlockUiHint::receiver;
+                case wm2e::MidiFunctionBlockUIHint::Unknown:         return ump::BlockUiHint::unknown;
             }
 
             return ump::BlockUiHint{};
@@ -632,10 +632,10 @@ private:
         {
             switch (b.RepresentsMidi10Connection())
             {
-                case wm2::MidiFunctionBlockRepresentsMidi10Connection::Not10:                    return ump::BlockMIDI1ProxyKind::inapplicable;
-                case wm2::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthRestricted:   return ump::BlockMIDI1ProxyKind::restrictedBandwidth;
-                case wm2::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthUnrestricted: return ump::BlockMIDI1ProxyKind::unrestrictedBandwidth;
-                case wm2::MidiFunctionBlockRepresentsMidi10Connection::Reserved:                 break;
+                case wm2e::MidiFunctionBlockRepresentsMidi10Connection::Not10:                    return ump::BlockMIDI1ProxyKind::inapplicable;
+                case wm2e::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthRestricted:   return ump::BlockMIDI1ProxyKind::restrictedBandwidth;
+                case wm2e::MidiFunctionBlockRepresentsMidi10Connection::YesBandwidthUnrestricted: return ump::BlockMIDI1ProxyKind::unrestrictedBandwidth;
+                case wm2e::MidiFunctionBlockRepresentsMidi10Connection::Reserved:                 break;
             }
 
             return ump::BlockMIDI1ProxyKind{};
@@ -653,46 +653,41 @@ private:
         return { index, block };
     }
 
-    static wm2::MidiDeclaredDeviceIdentity makeDeviceInfo (ump::DeviceInfo x)
+    static wm2e::MidiDeclaredDeviceIdentity makeDeviceInfo (ump::DeviceInfo x)
     {
-        wm2::MidiDeclaredDeviceIdentity result{};
+        wm2e::MidiDeclaredDeviceIdentity result{};
 
-        result.SystemExclusiveIdByte1 = (uint8_t) x.manufacturer[0];
-        result.SystemExclusiveIdByte2 = (uint8_t) x.manufacturer[1];
-        result.SystemExclusiveIdByte3 = (uint8_t) x.manufacturer[2];
-
-        result.DeviceFamilyLsb = (uint8_t) x.family[0];
-        result.DeviceFamilyMsb = (uint8_t) x.family[1];
-
-        result.DeviceFamilyModelNumberLsb = (uint8_t) x.modelNumber[0];
-        result.DeviceFamilyModelNumberMsb = (uint8_t) x.modelNumber[1];
-
-        result.SoftwareRevisionLevelByte1 = (uint8_t) x.revision[0];
-        result.SoftwareRevisionLevelByte2 = (uint8_t) x.revision[1];
-        result.SoftwareRevisionLevelByte3 = (uint8_t) x.revision[2];
-        result.SoftwareRevisionLevelByte4 = (uint8_t) x.revision[3];
+        std::apply ([&] (auto&&... args) { result.SetSystemExclusiveId ((uint8_t) args...); }, x.manufacturer);
+        std::apply ([&] (auto&&... args) { result.SetDeviceFamily ((uint8_t) args...); }, x.family);
+        std::apply ([&] (auto&&... args) { result.SetDeviceFamilyModelNumber ((uint8_t) args...); }, x.modelNumber);
+        std::apply ([&] (auto&&... args) { result.SetSoftwareRevisionLevel ((uint8_t) args...); }, x.revision);
 
         return result;
     }
 
-    static ump::DeviceInfo makeDeviceInfo (const wm2::MidiDeclaredDeviceIdentity& x)
+    static std::optional<ump::DeviceInfo> makeDeviceInfo (const wm2e::MidiDeclaredDeviceIdentity& x)
     {
+        if (x == nullptr)
+        {
+            return {};
+        }
+
+        const auto byteArrayFromComArray = [] <auto... Ix> (const winrt::com_array<unsigned char>& array, std::index_sequence<Ix...>)
+        {
+            return std::array { (std::byte) array[Ix]... };
+        };
+
         return ump::DeviceInfo
         {
-            { std::byte (x.SystemExclusiveIdByte1),
-              std::byte (x.SystemExclusiveIdByte2),
-              std::byte (x.SystemExclusiveIdByte3) },
+            byteArrayFromComArray (x.SystemExclusiveId(), std::make_index_sequence<3>()),
 
-            { std::byte (x.DeviceFamilyLsb),
-              std::byte (x.DeviceFamilyMsb) },
+            { std::byte (x.DeviceFamilyLsb()),
+              std::byte (x.DeviceFamilyMsb()) },
 
-            { std::byte (x.DeviceFamilyModelNumberLsb),
-              std::byte (x.DeviceFamilyModelNumberMsb) },
+            { std::byte (x.DeviceFamilyModelNumberLsb()),
+              std::byte (x.DeviceFamilyModelNumberMsb()) },
 
-            { std::byte (x.SoftwareRevisionLevelByte1),
-              std::byte (x.SoftwareRevisionLevelByte2),
-              std::byte (x.SoftwareRevisionLevelByte3),
-              std::byte (x.SoftwareRevisionLevelByte4) },
+            byteArrayFromComArray (x.SoftwareRevisionLevel(), std::make_index_sequence<4>()),
         };
     }
 
@@ -771,7 +766,7 @@ private:
                 return {};
             }
 
-            auto watcher = wm2::MidiEndpointDeviceWatcher::Create();
+            auto watcher = wm2e::MidiEndpointDeviceWatcher::Create();
 
             if (! watcher)
                 return {};
@@ -780,10 +775,10 @@ private:
         }
 
     private:
-        EndpointsImplNative (wm2::MidiEndpointDeviceWatcher w, ump::EndpointsListener& l)
+        EndpointsImplNative (wm2e::MidiEndpointDeviceWatcher w, ump::EndpointsListener& l)
             : listener (l), watcher (w)
         {
-            watcher.Added ([this] (auto&, const wm2::MidiEndpointDeviceInformationAddedEventArgs& args)
+            watcher.Added ([this] (auto&, const wm2e::MidiEndpointDeviceInformationAddedEventArgs& args)
             {
                 const auto device = args.AddedDevice();
                 const auto id = toString (device.EndpointDeviceId());
@@ -798,11 +793,12 @@ private:
                 triggerAsyncUpdate();
             });
 
-            watcher.Updated ([this] (auto&, const wm2::MidiEndpointDeviceInformationUpdatedEventArgs& args)
+            watcher.Updated ([this] (auto&, const wm2e::MidiEndpointDeviceInformationUpdatedEventArgs& args)
             {
-                const auto id = toString (args.EndpointDeviceId());
+                const auto plainId = args.UpdatedDevice().EndpointDeviceId();
+                const auto id = toString (plainId);
 
-                if (const auto info = wm2::MidiEndpointDeviceInformation::CreateFromEndpointDeviceId (args.EndpointDeviceId()))
+                if (const auto info = wm2e::MidiEndpointDeviceInformation::CreateFromEndpointDeviceId (plainId))
                 {
                     const auto endpoint = makeEndpoint (info);
 
@@ -816,9 +812,9 @@ private:
                 }
             });
 
-            watcher.Removed ([this] (auto&, const wm2::MidiEndpointDeviceInformationRemovedEventArgs& args)
+            watcher.Removed ([this] (auto&, const wm2e::MidiEndpointDeviceInformationRemovedEventArgs& args)
             {
-                const auto id = toString (args.EndpointDeviceId());
+                const auto id = toString (args.RemovedDevice().EndpointDeviceId());
 
                 const std::scoped_lock lock { mutex };
                 pendingWork.push_back ([this, id]
@@ -875,13 +871,13 @@ private:
             listener.endpointsChanged();
         }
 
-        static ump::EndpointAndStaticInfo makeEndpoint (const wm2::MidiEndpointDeviceInformation& info)
+        static ump::EndpointAndStaticInfo makeEndpoint (const wm2e::MidiEndpointDeviceInformation& info)
         {
             const auto transport = std::invoke ([&]
             {
-                const auto t = info.GetTransportSuppliedInfo().NativeDataFormat;
+                const auto t = info.GetTransportSuppliedInfo().NativeDataFormat();
 
-                if (t == wm2::MidiEndpointNativeDataFormat::Midi1ByteFormat)
+                if (t == wm2e::MidiEndpointNativeDataFormat::Midi1ByteFormat)
                     return ump::Transport::bytestream;
 
                 return ump::Transport::ump;
@@ -889,9 +885,9 @@ private:
 
             const auto itemProtocol = std::invoke ([&]
             {
-                const auto p = info.GetDeclaredStreamConfiguration().Protocol;
+                const auto p = info.GetDeclaredStreamConfiguration().Protocol();
 
-                if (p == wm2::MidiProtocol::Midi1 || transport == ump::Transport::bytestream)
+                if (p == wm2e::MidiProtocol::Midi1 || transport == ump::Transport::bytestream)
                     return ump::PacketProtocol::MIDI_1_0;
 
                 return ump::PacketProtocol::MIDI_2_0;
@@ -933,28 +929,28 @@ private:
             const auto endpoint = ump::Endpoint{}.withName (toString (info.Name()))
                                                  .withProtocol (itemProtocol)
                                                  .withBlocks (blocks)
-                                                 .withDeviceInfo (deviceInfo)
-                                                 .withProductInstanceId (toString (info.GetDeclaredEndpointInfo().ProductInstanceId))
-                                                 .withUMPVersion (e.SpecificationVersionMajor, e.SpecificationVersionMinor)
-                                                 .withMidi1Support (e.SupportsMidi10Protocol)
-                                                 .withMidi2Support (e.SupportsMidi20Protocol)
-                                                 .withStaticBlocks (e.HasStaticFunctionBlocks)
-                                                 .withReceiveJRSupport (e.SupportsReceivingJitterReductionTimestamps)
-                                                 .withTransmitJRSupport (e.SupportsSendingJitterReductionTimestamps);
+                                                 .withDeviceInfo (deviceInfo.value_or ({}))
+                                                 .withProductInstanceId (toString (info.GetDeclaredEndpointInfo().ProductInstanceId()))
+                                                 .withUMPVersion (e.SpecificationVersionMajor(), e.SpecificationVersionMinor())
+                                                 .withMidi1Support (e.SupportsMidi10Protocol())
+                                                 .withMidi2Support (e.SupportsMidi20Protocol())
+                                                 .withStaticBlocks (e.HasStaticFunctionBlocks())
+                                                 .withReceiveJRSupport (e.SupportsReceivingJitterReductionTimestamps())
+                                                 .withTransmitJRSupport (e.SupportsSendingJitterReductionTimestamps());
 
             const auto hasBlockDirection = [&] (auto direction)
             {
-                const auto blockCanUseDirection = [&] (const wm2::MidiFunctionBlock& x)
+                const auto blockCanUseDirection = [&] (const wm2e::MidiFunctionBlock& x)
                 {
                     const auto d = x.Direction();
-                    return d == wm2::MidiFunctionBlockDirection::Bidirectional || d == direction;
+                    return d == wm2e::MidiFunctionBlockDirection::Bidirectional || d == direction;
                 };
 
                 const auto fb = info.GetDeclaredFunctionBlocks();
                 const auto gt = info.GetGroupTerminalBlocks();
 
                 return std::any_of (fb.begin(), fb.end(), blockCanUseDirection)
-                    || std::any_of (gt.begin(), gt.end(), [&] (const wm2::MidiGroupTerminalBlock& x)
+                    || std::any_of (gt.begin(), gt.end(), [&] (const wm2e::MidiGroupTerminalBlock& x)
                        {
                            return blockCanUseDirection (x.AsEquivalentFunctionBlock());
                        });
@@ -963,8 +959,8 @@ private:
             const auto staticInfo = ump::StaticDeviceInfo{}.withName (toString (info.Name()))
                                                            .withManufacturer (toString (winrt::unbox_value_or<winrt::hstring> (manufacturer, L"")))
                                                            .withProduct (toString (winrt::unbox_value_or<winrt::hstring> (product, L"")))
-                                                           .withHasSource (hasBlockDirection (wm2::MidiFunctionBlockDirection::BlockOutput))
-                                                           .withHasDestination (hasBlockDirection (wm2::MidiFunctionBlockDirection::BlockInput))
+                                                           .withHasSource (hasBlockDirection (wm2e::MidiFunctionBlockDirection::BlockOutput))
+                                                           .withHasDestination (hasBlockDirection (wm2e::MidiFunctionBlockDirection::BlockInput))
                                                            .withLegacyIdentifiersSrc (legacyIds)
                                                            .withLegacyIdentifiersDst (legacyIds)
                                                            .withTransport (transport);
@@ -977,36 +973,26 @@ private:
         public:
             SdkInitialiser() = default;
 
-            bool isValid() const { return ptr != nullptr; }
+            bool isValid() const { return initialised; }
 
         private:
-            ComSmartPtr<mwdmi::IMidiClientInitializer> ptr = std::invoke ([]() -> ComSmartPtr<mwdmi::IMidiClientInitializer>
+            bool initialised = std::invoke ([]()
             {
                 try
                 {
                     winrt::init_apartment (winrt::apartment_type::single_threaded);
+                    return wm2::MidiApi::EnsureServiceAvailable();
+                }
+                catch (const winrt::hresult_error& e)
+                {
+                    DBG ("winrt threw hresult: " << e.message().c_str());
                 }
                 catch (...)
                 {
                     // We tried...
                 }
 
-                ComSmartPtr<mwdmi::IMidiClientInitializer> result;
-
-                if (FAILED (CoCreateInstance (__uuidof (mwdmi::MidiClientInitializerUuid),
-                                              nullptr,
-                                              CLSCTX::CLSCTX_INPROC_SERVER | CLSCTX::CLSCTX_FROM_DEFAULT_CONTEXT,
-                                              __uuidof (mwdmi::IMidiClientInitializer),
-                                              (void**) result.resetAndGetPointerAddress())))
-                    return {};
-
-                if (result == nullptr)
-                    return {};
-
-                if (FAILED (result->EnsureServiceAvailable()))
-                    return {};
-
-                return result;
+                return false;
             });
         };
 
@@ -1018,7 +1004,7 @@ private:
         ump::EndpointsListener& listener;
         std::map<ump::EndpointId, ump::EndpointAndStaticInfo> cachedEndpoints;
         std::map<ump::EndpointId, std::weak_ptr<VirtualEndpoint>> virtualEndpoints;
-        wm2::MidiEndpointDeviceWatcher watcher;
+        wm2e::MidiEndpointDeviceWatcher watcher;
     };
 
     static String toString (const winrt::hstring& str)
