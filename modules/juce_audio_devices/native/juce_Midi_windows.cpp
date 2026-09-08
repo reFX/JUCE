@@ -56,6 +56,12 @@ public:
     }
 
 private:
+    enum class UseComApiInput
+    {
+        no,
+        yes,
+    };
+
     /*  For both input and output.
         It's most resource-efficient to have only one connection to each endpoint.
         Therefore, we keep track of endpoints we've opened, and share the endpoints between
@@ -67,6 +73,7 @@ private:
         template <typename... Args>
         static std::unique_ptr<SharedConnection> make (const wm2::MidiSession& session,
                                                        const winrt::param::hstring& id,
+                                                       UseComApiInput useComApi,
                                                        Args&&... args)
         {
             auto connection = session.CreateEndpointConnection (id);
@@ -77,19 +84,28 @@ private:
             setUpConnection (connection, args...);
 
             auto result = rawToUniquePtr (new SharedConnection (session, std::move (connection)));
-            result->inputToken = result->connection.MessageReceived ([self = result.get()] (const auto&, const wm2::MidiMessageReceivedEventArgs& args)
+
+            if (useComApi == UseComApiInput::yes)
             {
-                std::array<uint32_t, 4> words{};
-                args.FillWordArray (0, words);
+                if (auto raw = result->rawConnection)
+                    raw->SetMessagesReceivedCallback (result->inputCallback.get());
+            }
+            else
+            {
+                result->inputToken = result->connection.MessageReceived ([self = result.get()] (const auto&, const wm2::MidiMessageReceivedEventArgs& args)
+                {
+                    std::array<uint32_t, 4> words{};
+                    args.FillWordArray (0, words);
 
-                const ump::Iterator begin { words.data(), words.size() };
-                const auto end = std::next (begin);
+                    const ump::Iterator begin { words.data(), words.size() };
+                    const auto end = std::next (begin);
 
-                const auto elapsedTime = args.Timestamp() - self->startTimeNative;
-                const auto juceTimeMillis = self->startTimeMillis + wm2::MidiClock::ConvertTimestampTicksToMilliseconds (elapsedTime);
+                    const auto elapsedTime = args.Timestamp() - self->startTimeNative;
+                    const auto juceTimeMillis = self->startTimeMillis + wm2::MidiClock::ConvertTimestampTicksToMilliseconds (elapsedTime);
 
-                self->consumers.call ([&] (auto& c) { c.consume (begin, end, juceTimeMillis * 0.001); });
-            });
+                    self->consumers.call ([&] (auto& c) { c.consume (begin, end, juceTimeMillis * 0.001); });
+                });
+            }
 
             result->disconnectToken = result->connection.EndpointDeviceDisconnected ([self = result.get()] (auto&&...)
             {
@@ -104,6 +120,11 @@ private:
 
         ~SharedConnection()
         {
+            if (rawConnection != nullptr)
+            {
+                rawConnection->RemoveMessagesReceivedCallback();
+            }
+
             connection.MessageReceived (inputToken);
             connection.EndpointDeviceDisconnected (disconnectToken);
 
@@ -141,14 +162,77 @@ private:
 
         bool send (ump::Iterator b, ump::Iterator e)
         {
-            const auto result = connection.SendMultipleMessagesWordArray (0,
-                                                                          0,
-                                                                          (uint32_t) std::distance (b->data(), e->data()),
-                                                                          { b->data(), e->data() });
-            return wm2::MidiSendMessageResults::Succeeded == result;
+            if (rawConnection == nullptr)
+                return false;
+
+            const auto maxWordsPerSend = rawConnection->GetSupportedMaxMidiWordsPerTransmission();
+
+            for (auto it = b; it != e;)
+            {
+                // Find the first packet with an end that falls outside the max num words
+                const auto chunkEnd = std::find_if (it, e, [&] (auto view)
+                {
+                    return maxWordsPerSend < std::distance (it->data(), view.data() + view.size());
+                });
+
+                // Check if we're unable to send a single packet (seems unlikely...)
+                if (chunkEnd == it)
+                    return false;
+
+                const auto sendResult = rawConnection->SendMidiMessagesRaw (wm2::MidiClock::TimestampConstantSendImmediately(),
+                                                                            (uint32_t) std::distance (it->data(), chunkEnd->data()),
+                                                                            it->data());
+
+                if (FAILED (sendResult))
+                    return false;
+
+                it = chunkEnd;
+            }
+
+            return true;
         }
 
     private:
+        struct InputCallback : public IMidiEndpointConnectionMessagesReceivedCallback
+        {
+            explicit InputCallback (SharedConnection& s)
+                : self (s)
+            {
+            }
+
+            HRESULT QueryInterface (const IID&, void**) { return E_NOTIMPL; }
+
+            ULONG AddRef() override
+            {
+                return ++refCount;
+            }
+
+            ULONG Release() override
+            {
+                const auto result = --refCount;
+
+                if (refCount == 0)
+                    delete this;
+
+                return result;
+            }
+
+            HRESULT MessagesReceived (GUID, GUID, UINT64 timestamp, UINT32 size, const UINT32* data) override
+            {
+                const ump::Iterator begin { data, size };
+                const ump::Iterator end { data + size, 0 };
+
+                const auto elapsedTime = timestamp - self.startTimeNative;
+                const auto juceTimeMillis = self.startTimeMillis + wm2::MidiClock::ConvertTimestampTicksToMilliseconds (elapsedTime);
+
+                self.consumers.call ([&] (auto& c) { c.consume (begin, end, juceTimeMillis * 0.001); });
+                return S_OK;
+            }
+
+            std::atomic<ULONG> refCount { 1 };
+            SharedConnection& self;
+        };
+
         SharedConnection (wm2::MidiSession s, wm2::MidiEndpointConnection c)
             : session (std::move (s)), connection (std::move (c)) {}
 
@@ -171,8 +255,10 @@ private:
         const uint64_t startTimeNative = wm2::MidiClock::Now();
         const uint32_t startTimeMillis = Time::getMillisecondCounter();
 
+        ComSmartPtr<InputCallback> inputCallback { new InputCallback { *this }, IncrementRef::no };
         wm2::MidiSession session;
         wm2::MidiEndpointConnection connection;
+        ComSmartPtr<IMidiEndpointConnectionRaw> rawConnection { connection.as<IMidiEndpointConnectionRaw>().detach(), IncrementRef::no };
         WaitFreeListeners<ump::Consumer> consumers;
         ListenerList<ump::DisconnectionListener> disconnectListeners;
         winrt::event_token inputToken, disconnectToken;
@@ -405,14 +491,14 @@ private:
                                                                 ump::PacketProtocol p,
                                                                 ump::Consumer& consumer) override
         {
-            const auto strong = findOrOpenConnection (id.src.toWideCharPointer());
+            const auto strong = findOrOpenConnection (id.src.toWideCharPointer(), UseComApiInput::yes);
             return InputImplNative::make (strong, listener, p, consumer);
         }
 
         std::unique_ptr<ump::Output::Impl::Native> connectOutput (ump::DisconnectionListener& listener,
                                                                   const ump::EndpointId& id) override
         {
-            const auto strong = findOrOpenConnection (id.dst.toWideCharPointer());
+            const auto strong = findOrOpenConnection (id.dst.toWideCharPointer(), UseComApiInput::yes);
             return OutputImplNative::make (strong, listener);
         }
 
@@ -485,7 +571,7 @@ private:
 
             // In order to function, the device needs a client plugin installed, which in turn
             // requires opening a connection to the endpoint.
-            auto connection = findOrOpenConnection (device.DeviceEndpointDeviceId(), device);
+            auto connection = findOrOpenConnection (device.DeviceEndpointDeviceId(), UseComApiInput::no, device);
 
             if (connection == nullptr)
                 return {};

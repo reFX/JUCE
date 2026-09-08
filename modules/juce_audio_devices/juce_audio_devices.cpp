@@ -277,6 +277,7 @@ namespace juce
   #include <winrt/Windows.Foundation.Collections.h>
   #include <winrt/Windows.Devices.Enumeration.h>
 
+  #include <WindowsMidiServicesAppSdkComExtensions.h>
   #include <winrt/Windows.Devices.Midi2.h>
   #include <winrt/Windows.Devices.Midi2.Enumeration.h>
   #include <winrt/Windows.Devices.Midi2.Transports.Virtual.h>
