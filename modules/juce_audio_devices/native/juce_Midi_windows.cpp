@@ -2485,7 +2485,8 @@ struct WindowsMidiHelpers
                 hdr.lpData = data.data();
                 hdr.dwBufferLength = (DWORD) data.size();
 
-                midiInPrepareHeader (device, &hdr, sizeof (hdr));
+                [[maybe_unused]] const auto result = midiInPrepareHeader (device, &hdr, sizeof (hdr));
+                jassert (result == MMSYSERR_NOERROR);
             }
 
             void unprepare (HMIDIIN device)
@@ -2510,10 +2511,9 @@ struct WindowsMidiHelpers
                 midiInAddBuffer (device, &hdr, sizeof (hdr));
             }
 
-            void writeIfFinished (HMIDIIN device)
+            bool isFinished() const
             {
-                if ((hdr.dwFlags & WHDR_DONE) != 0)
-                    write (device);
+                return (hdr.dwFlags & WHDR_DONE) != 0;
             }
 
         private:
@@ -2558,6 +2558,11 @@ struct WindowsMidiHelpers
 
             ~InputDevice() override
             {
+                inDestructor = true;
+                SetEvent (event.get());
+
+                blockQueueThread.join();
+
                 allInputs().remove (*this);
 
                 if (deviceHandle == nullptr)
@@ -2566,7 +2571,8 @@ struct WindowsMidiHelpers
                 midiInStop (deviceHandle);
                 midiInReset (deviceHandle);
 
-                unprepareAllHeaders();
+                for (auto& header : headers)
+                    header.unprepare (deviceHandle);
 
                 for (int count = 5; --count >= 0;)
                 {
@@ -2638,6 +2644,18 @@ struct WindowsMidiHelpers
                 if (midiInStart (handle) != MMSYSERR_NOERROR)
                     return {};
 
+                result->blockQueueThread = std::thread { [self = result.get()]
+                {
+                    while (! self->inDestructor)
+                    {
+                        WaitForSingleObject (self->event.get(), INFINITE);
+
+                        for (auto& header : self->headers)
+                            if (header.isFinished())
+                                header.write (self->deviceHandle);
+                    }
+                } };
+
                 return result;
             }
 
@@ -2659,9 +2677,9 @@ struct WindowsMidiHelpers
                         const auto e = std::next (b);
                         consumers.call ([&] (ump::Consumer& c) { c.consume (b, e, timestamp); });
                     });
-
-                    writeFinishedBlocks();
                 }
+
+                SetEvent (event.get());
             }
 
             void handleSysEx (MIDIHDR* hdr, uint32 timeStamp)
@@ -2675,9 +2693,9 @@ struct WindowsMidiHelpers
                         const auto e = std::next (b);
                         consumers.call ([&] (ump::Consumer& c) { c.consume (b, e, timestamp); });
                     });
-
-                    writeFinishedBlocks();
                 }
+
+                SetEvent (event.get());
             }
 
             void disconnected()
@@ -2688,18 +2706,6 @@ struct WindowsMidiHelpers
             void handleAsyncUpdate() override
             {
                 disconnectListeners.call ([] (auto& x) { x.disconnected(); });
-            }
-
-            void writeFinishedBlocks()
-            {
-                for (auto& header : headers)
-                    header.writeIfFinished (deviceHandle);
-            }
-
-            void unprepareAllHeaders()
-            {
-                for (auto& header : headers)
-                    header.unprepare (deviceHandle);
             }
 
             double convertTimeStamp (uint32 timeStamp)
@@ -2763,6 +2769,19 @@ struct WindowsMidiHelpers
             // The shared input always converts to plain MIDI 1.0. Clients that want MIDI 2.0 have
             // their own converters.
             ump::BytestreamToUMPDispatcher dispatcher { 0, ump::PacketProtocol::MIDI_1_0, 4096 };
+
+            struct EventDestructor
+            {
+                void operator() (HANDLE h) const
+                {
+                    if (h != nullptr)
+                        CloseHandle (h);
+                }
+            };
+
+            std::atomic<bool> inDestructor { false };
+            std::unique_ptr<void, EventDestructor> event { CreateEvent (nullptr, false, false, nullptr) };
+            std::thread blockQueueThread;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InputDevice)
         };
