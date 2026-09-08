@@ -2490,14 +2490,18 @@ struct WindowsMidiHelpers
 
             void unprepare (HMIDIIN device)
             {
-                if ((hdr.dwFlags & WHDR_DONE) != 0)
+                for (auto i = 0; i < 10; ++i)
                 {
-                    int c = 10;
-                    while (--c >= 0 && midiInUnprepareHeader (device, &hdr, sizeof (hdr)) == MIDIERR_STILLPLAYING)
-                        Thread::sleep (20);
+                    const auto result = midiInUnprepareHeader (device, &hdr, sizeof (hdr));
 
-                    jassert (c >= 0);
+                    if (result != MIDIERR_STILLPLAYING)
+                        return;
+
+                    Thread::sleep (20);
                 }
+
+                // Failed to unprepare after several tries
+                jassertfalse;
             }
 
             void write (HMIDIIN device)
@@ -2559,10 +2563,10 @@ struct WindowsMidiHelpers
                 if (deviceHandle == nullptr)
                     return;
 
-                unprepareAllHeaders();
-
-                midiInReset (deviceHandle);
                 midiInStop (deviceHandle);
+                midiInReset (deviceHandle);
+
+                unprepareAllHeaders();
 
                 for (int count = 5; --count >= 0;)
                 {
