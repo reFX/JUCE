@@ -2613,6 +2613,16 @@ private:
         if (canUseMultiTouch() && (isTouch || areOtherTouchSourcesActive()))
             return;
 
+        // If this is the first event after receiving both a MOUSEACTIVATE and a SETFOCUS, then
+        // process the postponed focus update.
+        if (std::exchange (mouseActivateFlags, (uint8_t) 0) == (gotMouseActivate | gotSetFocus))
+        {
+            handleSetFocus();
+
+            if (! isValidPeer (this))
+                return;
+        }
+
         if (GetCapture() != hwnd)
             SetCapture (hwnd);
 
@@ -2626,11 +2636,6 @@ private:
 
             doMouseEvent (inputSourceType, getPointFromLocalLParam (lParam), MouseInputSource::defaultPressure);
         }
-
-        // If this is the first event after receiving both a MOUSEACTIVATE and a SETFOCUS, then
-        // process the postponed focus update.
-        if (std::exchange (mouseActivateFlags, (uint8_t) 0) == (gotMouseActivate | gotSetFocus))
-            handleSetFocus();
     }
 
     void doMouseUp (Point<float> position, const WPARAM wParam, bool adjustCapture = true)
