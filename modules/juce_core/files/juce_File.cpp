@@ -1193,9 +1193,12 @@ public:
         expect (demoFolder.containsSubDirectories());
 
         expect (tempFile.hasWriteAccess());
-        tempFile.setReadOnly (true);
-        expect (! tempFile.hasWriteAccess());
-        tempFile.setReadOnly (false);
+        expect (tempFile.setReadOnly (true));
+
+        // If you are running as root you are still able to write to read-only files
+        expect (tempFile.hasWriteAccess() == hasRootFilePermissions());
+
+        expect (tempFile.setReadOnly (false));
         expect (tempFile.hasWriteAccess());
 
         Time t (Time::getCurrentTime());
@@ -1295,6 +1298,15 @@ public:
             expectEquals (url.getParentURL().getChildURL ("x").toString (false), String ("https://audio.dev/foo/x"));
             expectEquals (url.getParentURL().getParentURL().getParentURL().getChildURL ("x").toString (false), String ("https://audio.dev/x"));
         }
+    }
+
+    static bool hasRootFilePermissions()
+    {
+       #if JUCE_WINDOWS
+        return false;
+       #else
+        return geteuid() == 0;
+       #endif
     }
 };
 
