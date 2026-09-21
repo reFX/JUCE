@@ -49,6 +49,10 @@ private:
         formats.push_back (std::make_unique<PNGImageFormat>());
         formats.push_back (std::make_unique<JPEGImageFormat>());
         formats.push_back (std::make_unique<GIFImageFormat>());
+
+       #if JUCE_USE_WEBP
+        formats.push_back (std::make_unique<WebPImageFormat>());
+       #endif
     }
 
     std::vector<std::unique_ptr<ImageFileFormat>> formats;
