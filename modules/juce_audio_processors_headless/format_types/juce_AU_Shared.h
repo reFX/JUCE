@@ -542,7 +542,10 @@ struct AudioUnitHelpers
             if (configs[i][isInput ? 0 : 1] != 0)
                 hasOnlyZeroChannels = false;
 
-        busCount = jmin (busCount, hasOnlyZeroChannels ? 0 : 1);
+        // The configuration list constrains channel counts, not the number of buses: a
+        // processor that declares aux buses keeps them, so hosts can offer direct outs.
+        if (hasOnlyZeroChannels)
+            busCount = 0;
        #endif
 
         return busCount;

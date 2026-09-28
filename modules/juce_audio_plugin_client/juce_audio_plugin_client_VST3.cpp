@@ -3222,7 +3222,10 @@ public:
             if (configs[i][isInput ? 0 : 1] != 0)
                 hasOnlyZeroChannels = false;
 
-        busCount = jmin (busCount, hasOnlyZeroChannels ? 0 : 1);
+        // The configuration list constrains channel counts, not the number of buses: a
+        // processor that declares aux buses keeps them, so hosts can offer direct outs.
+        if (hasOnlyZeroChannels)
+            busCount = 0;
        #endif
 
         return busCount;
@@ -3292,11 +3295,7 @@ public:
                    #endif
                 }();
 
-               #ifdef JucePlugin_PreferredChannelConfigurations
-                info.flags = Vst::BusInfo::kDefaultActive;
-               #else
                 info.flags = (bus->isEnabledByDefault()) ? Vst::BusInfo::kDefaultActive : 0;
-               #endif
 
                 return kResultTrue;
             }
@@ -3451,7 +3450,13 @@ public:
                 const ChannelPair requested { toShort (countChannels (desiredLayout.inputBuses)),
                                               toShort (countChannels (desiredLayout.outputBuses)) };
                 const ChannelPair configs[] = { JucePlugin_PreferredChannelConfigurations };
-                return std::find (std::begin (configs), std::end (configs), requested) != std::end (configs);
+
+                if (std::find (std::begin (configs), std::end (configs), requested) == std::end (configs))
+                    return false;
+
+                // The list only constrains the total channel count. The processor still decides
+                // which combinations of enabled buses it can handle.
+                return pluginInstance->checkBusesLayoutSupported (desiredLayout);
                #else
                 return pluginInstance->checkBusesLayoutSupported (desiredLayout);
                #endif

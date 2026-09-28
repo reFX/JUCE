@@ -756,9 +756,9 @@ AudioProcessor::BusesLayout AudioProcessor::getNextBestLayoutInList (const Buses
 
 bool AudioProcessor::containsLayout (const BusesLayout& layouts, const Array<InOutChannelPair>& channelLayouts)
 {
-    if (layouts.inputBuses.size() > 1 || layouts.outputBuses.size() > 1)
-        return false;
-
+    // The channel layout list only describes the main buses. A processor that declares
+    // additional buses (aux outputs, sidechains) validates those through its own
+    // isBusesLayoutSupported callback, so they are not a reason to reject the layout here.
     const InOutChannelPair mainLayout (static_cast<int16> (layouts.getNumChannels (true, 0)),
                                        static_cast<int16> (layouts.getNumChannels (false, 0)));
 

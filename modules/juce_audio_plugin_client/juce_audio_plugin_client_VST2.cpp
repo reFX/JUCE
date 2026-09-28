@@ -261,7 +261,14 @@ public:
             maxNumInChannels = maxNumOutChannels = 2;
 
        #ifdef JucePlugin_PreferredChannelConfigurations
-        processor->setPlayConfigDetails (maxNumInChannels, maxNumOutChannels, 44100.0, 1024);
+        // A single-bus processor takes the widest configuration on its main buses. A processor
+        // with aux buses keeps them all enabled (see above) and exposes them as consecutive
+        // pins, so its total channel count must equal the widest configuration.
+        if (! pluginHasSidechainsOrAuxs())
+            processor->setPlayConfigDetails (maxNumInChannels, maxNumOutChannels, 44100.0, 1024);
+        else
+            jassert (processor->getTotalNumInputChannels()  == maxNumInChannels
+                  && processor->getTotalNumOutputChannels() == maxNumOutChannels);
        #endif
 
         processor->setRateAndBufferSizeDetails (0, 0);

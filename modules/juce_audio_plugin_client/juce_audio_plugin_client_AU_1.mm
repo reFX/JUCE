@@ -162,8 +162,22 @@ public:
         jassert (numConfigs > 0 && (configs[0][0] > 0 || configs[0][1] > 0));
         juceFilter->setPlayConfigDetails (configs[0][0], configs[0][1], 44100.0, 1024);
 
+        const auto mainBusSupportsChannelCount = [this] (bool isInput, int numChannels)
+        {
+            if (auto* bus = juceFilter->getBus (isInput, 0))
+                return bus->isNumberOfChannelsSupported (numChannels);
+
+            return numChannels == 0;
+        };
+
         for (int i = 0; i < numConfigs; ++i)
         {
+            // Only advertise configurations the main buses can take. A single-bus processor
+            // using the default layout callbacks accepts everything, so it keeps the full list.
+            if (! mainBusSupportsChannelCount (true,  configs[i][0])
+             || ! mainBusSupportsChannelCount (false, configs[i][1]))
+                continue;
+
             AUChannelInfo info;
 
             info.inChannels  = configs[i][0];
