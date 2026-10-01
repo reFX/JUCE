@@ -1418,14 +1418,13 @@ private:
     void findMaxTotalChannels (int& maxTotalIns, int& maxTotalOuts)
     {
        #ifdef JucePlugin_PreferredChannelConfigurations
+        // VST2 has no buses: every pin is always active, so a processor offering direct outs
+        // through the configuration list would appear to the host as one 32 channel instrument.
+        // Only the first configuration is honoured here (reFX). The other formats keep the
+        // full list.
         int configs[][2] = { JucePlugin_PreferredChannelConfigurations };
-        maxTotalIns = maxTotalOuts = 0;
-
-        for (auto& config : configs)
-        {
-            maxTotalIns =  jmax (maxTotalIns,  config[0]);
-            maxTotalOuts = jmax (maxTotalOuts, config[1]);
-        }
+        maxTotalIns  = configs[0][0];
+        maxTotalOuts = configs[0][1];
        #else
         auto numInputBuses  = processor->getBusCount (true);
         auto numOutputBuses = processor->getBusCount (false);
@@ -1772,8 +1771,10 @@ private:
             layouts.getChannelSet (false, 0) = SpeakerMappings::vstArrangementTypeToChannelSet (*pluginOutput);
 
        #ifdef JucePlugin_PreferredChannelConfigurations
+        // Only the first configuration is valid for VST2, see findMaxTotalChannels()
         short configs[][2] = { JucePlugin_PreferredChannelConfigurations };
-        if (! AudioProcessor::containsLayout (layouts, configs))
+        short first[1][2]  = { { configs[0][0], configs[0][1] } };
+        if (! AudioProcessor::containsLayout (layouts, first))
             return 0;
        #endif
 
