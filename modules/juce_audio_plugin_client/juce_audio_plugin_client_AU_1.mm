@@ -162,6 +162,14 @@ public:
         jassert (numConfigs > 0 && (configs[0][0] > 0 || configs[0][1] > 0));
         juceFilter->setPlayConfigDetails (configs[0][0], configs[0][1], 44100.0, 1024);
 
+        // An Audio Unit cannot disable a bus: every element always carries a stream format,
+        // and a new element defaults to stereo. A processor whose aux buses start disabled
+        // would record them as zero channels while the elements say two, and Initialize
+        // rejects that mismatch with kAudioUnitErr_FormatNotSupported before the processor
+        // is ever consulted. So, as the VST2 wrapper does, enable them all (reFX).
+        if (juceFilter->getBusCount (true) > 1 || juceFilter->getBusCount (false) > 1)
+            juceFilter->enableAllBuses();
+
         const auto mainBusSupportsChannelCount = [this] (bool isInput, int numChannels)
         {
             if (auto* bus = juceFilter->getBus (isInput, 0))
